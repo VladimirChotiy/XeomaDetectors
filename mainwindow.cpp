@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "StoreSettings.h"
+#include <QMessageBox>
 #include <QDebug>
 
 
@@ -37,3 +38,13 @@ void MainWindow::closeEvent(QCloseEvent *event)
     saveSettings();
 }
 
+
+void MainWindow::on_actionAbout_QT_triggered()
+{
+    QMessageBox::aboutQt(this);
+}
+
+void MainWindow::on_actionAboutProgramm_triggered()
+{
+    QMessageBox::about(this, "Информация о программе", "Программа для работы с базой данных детекторов Xeoma \nСалон Охранных Систем \nООО КОМПЛЕКС БЕЗОПАСНОСТИ КВАДРО-Т \nВерсия " + QApplication::applicationVersion());
+}

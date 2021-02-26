@@ -23,5 +23,8 @@ private:
     // QWidget interface
 protected:
     void closeEvent(QCloseEvent *event);
+private slots:
+    void on_actionAbout_QT_triggered();
+    void on_actionAboutProgramm_triggered();
 };
 #endif // MAINWINDOW_H

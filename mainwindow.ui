@@ -13,10 +13,130 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="res.qrc">
+    <normaloff>:/Icons/icons/app.ico</normaloff>:/Icons/icons/app.ico</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget"/>
-  <widget class="QMenuBar" name="menubar"/>
-  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QMenuBar" name="mm_MainMenu">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu_DB">
+    <property name="title">
+     <string>БД</string>
+    </property>
+    <addaction name="actionConnectToDatabase"/>
+    <addaction name="separator"/>
+    <addaction name="actionClose"/>
+   </widget>
+   <widget class="QMenu" name="menu_View">
+    <property name="title">
+     <string>Вид</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menu_Struct">
+    <property name="title">
+     <string>Структура</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menu_Raport">
+    <property name="title">
+     <string>Отчеты</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menu_Info">
+    <property name="title">
+     <string>Инфо</string>
+    </property>
+    <addaction name="actionAboutProgramm"/>
+    <addaction name="actionAbout_QT"/>
+   </widget>
+   <addaction name="menu_DB"/>
+   <addaction name="menu_View"/>
+   <addaction name="menu_Struct"/>
+   <addaction name="menu_Raport"/>
+   <addaction name="menu_Info"/>
+  </widget>
+  <widget class="QStatusBar" name="sb_MainStatusbar"/>
+  <widget class="QToolBar" name="tb_MainToolbar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <property name="allowedAreas">
+    <set>Qt::TopToolBarArea</set>
+   </property>
+   <property name="toolButtonStyle">
+    <enum>Qt::ToolButtonIconOnly</enum>
+   </property>
+   <property name="floatable">
+    <bool>false</bool>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionConnectToDatabase"/>
+   <addaction name="actionClose"/>
+  </widget>
+  <action name="actionAboutProgramm">
+   <property name="icon">
+    <iconset resource="res.qrc">
+     <normaloff>:/Icons/icons/About.ico</normaloff>:/Icons/icons/About.ico</iconset>
+   </property>
+   <property name="text">
+    <string>О программе</string>
+   </property>
+   <property name="toolTip">
+    <string>Краткая информация о программе</string>
+   </property>
+  </action>
+  <action name="actionAbout_QT">
+   <property name="icon">
+    <iconset resource="res.qrc">
+     <normaloff>:/Icons/icons/About_QT.ico</normaloff>:/Icons/icons/About_QT.ico</iconset>
+   </property>
+   <property name="text">
+    <string>About QT</string>
+   </property>
+   <property name="toolTip">
+    <string>About QT Framework</string>
+   </property>
+  </action>
+  <action name="actionConnectToDatabase">
+   <property name="icon">
+    <iconset resource="res.qrc">
+     <normaloff>:/Icons/icons/database.ico</normaloff>:/Icons/icons/database.ico</iconset>
+   </property>
+   <property name="text">
+    <string>Подключиться к БД</string>
+   </property>
+   <property name="toolTip">
+    <string>Подключиться к БД</string>
+   </property>
+  </action>
+  <action name="actionClose">
+   <property name="icon">
+    <iconset resource="res.qrc">
+     <normaloff>:/Icons/icons/close.ico</normaloff>:/Icons/icons/close.ico</iconset>
+   </property>
+   <property name="text">
+    <string>Выход</string>
+   </property>
+   <property name="toolTip">
+    <string>Выход из программы</string>
+   </property>
+  </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="res.qrc"/>
+ </resources>
  <connections/>
 </ui>
