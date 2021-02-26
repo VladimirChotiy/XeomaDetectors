@@ -26,5 +26,6 @@ protected:
 private slots:
     void on_actionAbout_QT_triggered();
     void on_actionAboutProgramm_triggered();
+    void on_actionClose_triggered();
 };
 #endif // MAINWINDOW_H
