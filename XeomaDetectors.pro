@@ -23,9 +23,14 @@ qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
+win32:RC_ICONS = $$PWD/icons/app.ico
+
 win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../StoreSettings/shared/release/ -lStoreSettings
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../StoreSettings/shared/debug/ -lStoreSettings
 else:unix:!macx: LIBS += -L$$PWD/../StoreSettings/shared/ -lStoreSettings
 
 INCLUDEPATH += $$PWD/../StoreSettings
 DEPENDPATH += $$PWD/../StoreSettings
+
+RESOURCES += \
+    res.qrc

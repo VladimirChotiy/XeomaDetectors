@@ -6,17 +6,413 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>914</width>
+    <height>656</height>
    </rect>
+  </property>
+  <property name="font">
+   <font>
+    <pointsize>9</pointsize>
+    <weight>50</weight>
+    <bold>false</bold>
+   </font>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
-  <widget class="QWidget" name="centralwidget"/>
-  <widget class="QMenuBar" name="menubar"/>
-  <widget class="QStatusBar" name="statusbar"/>
+  <property name="windowIcon">
+   <iconset resource="res.qrc">
+    <normaloff>:/Icons/icons/app.ico</normaloff>:/Icons/icons/app.ico</iconset>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout_2">
+    <item>
+     <widget class="QSplitter" name="splitter">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <widget class="QWidget" name="layoutWidget">
+       <layout class="QVBoxLayout" name="vl_LeftLayout">
+        <item>
+         <layout class="QVBoxLayout" name="vl_TreeLayout">
+          <item>
+           <widget class="QTreeView" name="treeView">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>200</width>
+              <height>200</height>
+             </size>
+            </property>
+            <property name="sizeIncrement">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="line_2">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="checkBox">
+            <property name="text">
+             <string>Отображать фотографии</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>1</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>200</width>
+            <height>200</height>
+           </size>
+          </property>
+          <property name="baseSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Image Loading ... 80%</string>
+          </property>
+          <property name="scaledContents">
+           <bool>true</bool>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="wordWrap">
+           <bool>false</bool>
+          </property>
+          <property name="indent">
+           <number>-1</number>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="layoutWidget">
+       <layout class="QHBoxLayout" name="hl_TableLayout">
+        <item>
+         <widget class="Line" name="line">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTableView" name="tableView"/>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="mm_MainMenu">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>914</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+     <weight>50</weight>
+     <bold>false</bold>
+    </font>
+   </property>
+   <widget class="QMenu" name="menu_DB">
+    <property name="title">
+     <string>БД</string>
+    </property>
+    <addaction name="actionConnectToDatabase"/>
+    <addaction name="actionRefresh"/>
+    <addaction name="separator"/>
+    <addaction name="actionClose"/>
+   </widget>
+   <widget class="QMenu" name="menu_View">
+    <property name="title">
+     <string>Вид</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menu_Struct">
+    <property name="title">
+     <string>Структура</string>
+    </property>
+    <widget class="QMenu" name="menu">
+     <property name="title">
+      <string>Объект</string>
+     </property>
+     <addaction name="actionAddObject"/>
+     <addaction name="actionEditObject"/>
+     <addaction name="actionDeleteObject"/>
+    </widget>
+    <widget class="QMenu" name="menu_2">
+     <property name="title">
+      <string>Детектор</string>
+     </property>
+     <addaction name="actionAddDetector"/>
+     <addaction name="actionEditDetector"/>
+     <addaction name="actionDeleteDetector"/>
+    </widget>
+    <addaction name="menu"/>
+    <addaction name="menu_2"/>
+   </widget>
+   <widget class="QMenu" name="menu_Raport">
+    <property name="title">
+     <string>Отчеты</string>
+    </property>
+    <addaction name="actionRaportDesigner"/>
+    <addaction name="actionConvertToExcel"/>
+    <addaction name="separator"/>
+    <addaction name="actionRaportStructure"/>
+    <addaction name="actionRaportProtocol"/>
+   </widget>
+   <widget class="QMenu" name="menu_Info">
+    <property name="title">
+     <string>Инфо</string>
+    </property>
+    <addaction name="actionAboutProgramm"/>
+    <addaction name="actionAbout_QT"/>
+   </widget>
+   <addaction name="menu_DB"/>
+   <addaction name="menu_View"/>
+   <addaction name="menu_Struct"/>
+   <addaction name="menu_Raport"/>
+   <addaction name="menu_Info"/>
+  </widget>
+  <widget class="QStatusBar" name="sb_MainStatusbar"/>
+  <widget class="QToolBar" name="tb_MainToolbar">
+   <property name="windowTitle">
+    <string>Основная панель инструментов</string>
+   </property>
+   <property name="allowedAreas">
+    <set>Qt::TopToolBarArea</set>
+   </property>
+   <property name="toolButtonStyle">
+    <enum>Qt::ToolButtonIconOnly</enum>
+   </property>
+   <property name="floatable">
+    <bool>false</bool>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionConnectToDatabase"/>
+   <addaction name="actionRefresh"/>
+   <addaction name="actionClose"/>
+  </widget>
+  <action name="actionAboutProgramm">
+   <property name="icon">
+    <iconset resource="res.qrc">
+     <normaloff>:/Icons/icons/About.ico</normaloff>:/Icons/icons/About.ico</iconset>
+   </property>
+   <property name="text">
+    <string>О программе</string>
+   </property>
+   <property name="toolTip">
+    <string>Краткая информация о программе</string>
+   </property>
+  </action>
+  <action name="actionAbout_QT">
+   <property name="icon">
+    <iconset resource="res.qrc">
+     <normaloff>:/Icons/icons/About_QT.ico</normaloff>:/Icons/icons/About_QT.ico</iconset>
+   </property>
+   <property name="text">
+    <string>About QT</string>
+   </property>
+   <property name="toolTip">
+    <string>About QT Framework</string>
+   </property>
+  </action>
+  <action name="actionConnectToDatabase">
+   <property name="icon">
+    <iconset resource="res.qrc">
+     <normaloff>:/Icons/icons/database.ico</normaloff>:/Icons/icons/database.ico</iconset>
+   </property>
+   <property name="text">
+    <string>Подключиться к БД</string>
+   </property>
+   <property name="toolTip">
+    <string>Подключиться к БД</string>
+   </property>
+  </action>
+  <action name="actionClose">
+   <property name="icon">
+    <iconset resource="res.qrc">
+     <normaloff>:/Icons/icons/close.ico</normaloff>:/Icons/icons/close.ico</iconset>
+   </property>
+   <property name="text">
+    <string>Выход</string>
+   </property>
+   <property name="toolTip">
+    <string>Выход из программы</string>
+   </property>
+  </action>
+  <action name="actionRefresh">
+   <property name="icon">
+    <iconset resource="res.qrc">
+     <normaloff>:/Icons/icons/refresh.ico</normaloff>:/Icons/icons/refresh.ico</iconset>
+   </property>
+   <property name="text">
+    <string>Обновить</string>
+   </property>
+   <property name="toolTip">
+    <string>Обновить данные</string>
+   </property>
+  </action>
+  <action name="actionAddObject">
+   <property name="icon">
+    <iconset resource="res.qrc">
+     <normaloff>:/Icons/icons/add.ico</normaloff>:/Icons/icons/add.ico</iconset>
+   </property>
+   <property name="text">
+    <string>Добавить объект</string>
+   </property>
+   <property name="toolTip">
+    <string>Добавить новый объект</string>
+   </property>
+  </action>
+  <action name="actionEditObject">
+   <property name="icon">
+    <iconset resource="res.qrc">
+     <normaloff>:/Icons/icons/edit.ico</normaloff>:/Icons/icons/edit.ico</iconset>
+   </property>
+   <property name="text">
+    <string>Редактировать объект</string>
+   </property>
+   <property name="toolTip">
+    <string>Редактировать выбранный объект</string>
+   </property>
+  </action>
+  <action name="actionDeleteObject">
+   <property name="icon">
+    <iconset resource="res.qrc">
+     <normaloff>:/Icons/icons/delete.ico</normaloff>:/Icons/icons/delete.ico</iconset>
+   </property>
+   <property name="text">
+    <string>Удалить объект</string>
+   </property>
+   <property name="toolTip">
+    <string>Удалить выбранный объект</string>
+   </property>
+  </action>
+  <action name="actionAddDetector">
+   <property name="icon">
+    <iconset resource="res.qrc">
+     <normaloff>:/Icons/icons/add.ico</normaloff>:/Icons/icons/add.ico</iconset>
+   </property>
+   <property name="text">
+    <string>Добавить детектор</string>
+   </property>
+   <property name="toolTip">
+    <string>Добавить новый детектор</string>
+   </property>
+  </action>
+  <action name="actionEditDetector">
+   <property name="icon">
+    <iconset resource="res.qrc">
+     <normaloff>:/Icons/icons/edit.ico</normaloff>:/Icons/icons/edit.ico</iconset>
+   </property>
+   <property name="text">
+    <string>Редактировать детектор</string>
+   </property>
+   <property name="toolTip">
+    <string>Редактировать выбранный детектор</string>
+   </property>
+  </action>
+  <action name="actionDeleteDetector">
+   <property name="icon">
+    <iconset resource="res.qrc">
+     <normaloff>:/Icons/icons/delete.ico</normaloff>:/Icons/icons/delete.ico</iconset>
+   </property>
+   <property name="text">
+    <string>Удалить детектор</string>
+   </property>
+   <property name="toolTip">
+    <string>Удалить выбранный детектор</string>
+   </property>
+  </action>
+  <action name="actionRaportDesigner">
+   <property name="icon">
+    <iconset resource="res.qrc">
+     <normaloff>:/Icons/icons/rep_designer.ico</normaloff>:/Icons/icons/rep_designer.ico</iconset>
+   </property>
+   <property name="text">
+    <string>Дизайнер отчетов</string>
+   </property>
+   <property name="toolTip">
+    <string>Запустить дизайнер отчетов</string>
+   </property>
+  </action>
+  <action name="actionConvertToExcel">
+   <property name="icon">
+    <iconset resource="res.qrc">
+     <normaloff>:/Icons/icons/excel_files.ico</normaloff>:/Icons/icons/excel_files.ico</iconset>
+   </property>
+   <property name="text">
+    <string>Конвертировать в Excel</string>
+   </property>
+   <property name="toolTip">
+    <string>Конвертировать текущий отчет в Excel</string>
+   </property>
+  </action>
+  <action name="actionRaportStructure">
+   <property name="icon">
+    <iconset resource="res.qrc">
+     <normaloff>:/Icons/icons/rep_common.ico</normaloff>:/Icons/icons/rep_common.ico</iconset>
+   </property>
+   <property name="text">
+    <string>Отчет по структуре</string>
+   </property>
+   <property name="toolTip">
+    <string>Отчет по структуре объектов и детекторов</string>
+   </property>
+  </action>
+  <action name="actionRaportProtocol">
+   <property name="icon">
+    <iconset resource="res.qrc">
+     <normaloff>:/Icons/icons/rep_common.ico</normaloff>:/Icons/icons/rep_common.ico</iconset>
+   </property>
+   <property name="text">
+    <string>Отчет по проездам</string>
+   </property>
+   <property name="toolTip">
+    <string>Отчет по проездам автотранспорта</string>
+   </property>
+  </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="res.qrc"/>
+ </resources>
  <connections/>
 </ui>
