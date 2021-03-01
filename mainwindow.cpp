@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "StoreSettings.h"
+#include "DatabaseManager/ConnectionManager.h"
 #include <QMessageBox>
 #include <QCloseEvent>
 #include <QDebug>
@@ -55,4 +56,14 @@ void MainWindow::on_actionAboutProgramm_triggered()
 void MainWindow::on_actionClose_triggered()
 {
     this->close();
+}
+
+void MainWindow::on_actionConnectToDatabase_triggered()
+{
+    ConnectionManager f;
+}
+
+void MainWindow::on_actionRaportDesigner_triggered()
+{
+
 }
