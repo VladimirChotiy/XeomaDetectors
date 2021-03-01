@@ -27,5 +27,7 @@ private slots:
     void on_actionAbout_QT_triggered();
     void on_actionAboutProgramm_triggered();
     void on_actionClose_triggered();
+    void on_actionConnectToDatabase_triggered();
+    void on_actionRaportDesigner_triggered();
 };
 #endif // MAINWINDOW_H
