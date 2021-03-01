@@ -43,4 +43,13 @@ void ConnectionManager::runConnections()
     QObject::connect(this, &ConnectionManager::destroyed, mainConnection, &DatabaseContainer::deleteLater);
     QObject::connect(mainConThread, &QThread::finished, mainConThread, &QThread::deleteLater);
     mainConThread->start();
+
+    DatabaseContainer *storageConnection = new DatabaseContainer(hostname, pictureStorage, userName, password, port);
+    QThread *storageConThread = new QThread();
+    storageConnection->moveToThread(storageConThread);
+    QObject::connect(storageConThread, &QThread::started, storageConnection, &DatabaseContainer::runConnection);
+    QObject::connect(this, &ConnectionManager::destroyed, storageConThread, &QThread::quit);
+    QObject::connect(this, &ConnectionManager::destroyed, storageConnection, &DatabaseContainer::deleteLater);
+    QObject::connect(storageConThread, &QThread::finished, storageConThread, &QThread::deleteLater);
+    storageConThread->start();
 }

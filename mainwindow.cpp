@@ -61,10 +61,6 @@ void MainWindow::on_actionClose_triggered()
 void MainWindow::on_actionConnectToDatabase_triggered()
 {
     ConnectionManager f;
-    f.setMainHost("xeoma.sos-dn.net", "developer", "1Dinyanow!");
-    f.setMainDatabase("udb_detectors");
-    f.setPictureStorage("udb_pictures");
-    f.runConnections();
 }
 
 void MainWindow::on_actionRaportDesigner_triggered()
