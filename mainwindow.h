@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QVariantList>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -29,5 +30,6 @@ private slots:
     void on_actionClose_triggered();
     void on_actionConnectToDatabase_triggered();
     void on_actionRaportDesigner_triggered();
+    void connectToDatabase(QVariantList param);
 };
 #endif // MAINWINDOW_H

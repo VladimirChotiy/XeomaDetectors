@@ -11,15 +11,18 @@ CONFIG += c++11
 SOURCES += \
     DatabaseManager/ConnectionManager.cpp \
     DatabaseManager/DatabaseContainer.cpp \
+    GUI/uiConnectionDialog/uiConnectionDialog.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
     DatabaseManager/ConnectionManager.h \
     DatabaseManager/DatabaseContainer.h \
+    GUI/uiConnectionDialog/uiConnectionDialog.h \
     mainwindow.h
 
 FORMS += \
+    GUI/uiConnectionDialog/uiConnectionDialog.ui \
     mainwindow.ui
 
 # Default rules for deployment.

@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include "StoreSettings.h"
 #include "DatabaseManager/ConnectionManager.h"
+#include "GUI/uiConnectionDialog/uiConnectionDialog.h"
 #include <QMessageBox>
 #include <QCloseEvent>
 #include <QDebug>
@@ -60,10 +61,18 @@ void MainWindow::on_actionClose_triggered()
 
 void MainWindow::on_actionConnectToDatabase_triggered()
 {
-    ConnectionManager f;
+    uiConnectionDialog *ui_ConnectionDialog = new uiConnectionDialog(this);
+    QObject::connect(ui_ConnectionDialog, &uiConnectionDialog::sendConnectionParam, this, &MainWindow::connectToDatabase);
+    ui_ConnectionDialog->setAttribute(Qt::WA_DeleteOnClose);
+    ui_ConnectionDialog->open();
 }
 
 void MainWindow::on_actionRaportDesigner_triggered()
 {
 
+}
+
+void MainWindow::connectToDatabase(QVariantList param)
+{
+    qDebug() <<param;
 }
