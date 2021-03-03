@@ -23,9 +23,11 @@ void DatabaseContainer::runConnection()
 
     if (!mainDB.open()) {
         emit this->databaseResult(false);
+        emit this->statusMessage("Ошибка подключения к БД.");
         qDebug() << "Error opening DB: " << dbName << Qt::endl << mainDB.lastError().text();
     }else {
         emit this->databaseResult(true);
+        emit this->statusMessage("Подключение к БД выполнено");
     }
 
     resultQuery = new QSqlQuery(mainDB);

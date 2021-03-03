@@ -26,6 +26,7 @@ public slots:
 signals:
     void databaseResult(bool result);
     void connectionClose();
+    void statusMessage(const QString& message);
 };
 
 #endif // DATABASECONTAINER_H

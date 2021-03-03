@@ -37,6 +37,7 @@ private slots:
     void on_actionRaportDesigner_triggered();
     void on_actionConvertToExcel_triggered();
     void connectToDatabase(QVariantList param);
+    void showStatusbarMessage(const QString& message);
 
 signals:
     void connectionClosed();

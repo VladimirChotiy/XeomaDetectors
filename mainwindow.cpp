@@ -9,6 +9,7 @@
 #include <QSqlDatabase>
 #include <QLabel>
 #include <QPixmap>
+#include <QDateTime>
 #include <QDebug>
 
 
@@ -109,6 +110,7 @@ void MainWindow::connectToDatabase(QVariantList param)
     QObject::connect(mainConnection, &DatabaseContainer::connectionClose, mainConThread, &QThread::quit);
     QObject::connect(mainConThread, &QThread::finished, mainConThread, &QThread::deleteLater);
     QObject::connect(mainConnection, &DatabaseContainer::databaseResult, sbl_ConnectionStatus, &QLabel::setEnabled);
+    QObject::connect(mainConnection, &DatabaseContainer::statusMessage, this, &MainWindow::showStatusbarMessage);
     mainConThread->start();
 
     DatabaseContainer *storageConnection = new DatabaseContainer(param.at(0).toString(), param.at(5).toString(), param.at(1).toString(), param.at(2).toString(), param.at(3).toInt());
@@ -119,7 +121,16 @@ void MainWindow::connectToDatabase(QVariantList param)
     QObject::connect(storageConnection, &DatabaseContainer::connectionClose, storageConThread, &QThread::quit);
     QObject::connect(storageConThread, &QThread::finished, storageConThread, &QThread::deleteLater);
     QObject::connect(storageConnection, &DatabaseContainer::databaseResult, sbl_StorageStatus, &QLabel::setEnabled);
+    QObject::connect(storageConnection, &DatabaseContainer::statusMessage, this, &MainWindow::showStatusbarMessage);
     storageConThread->start();
+}
+
+void MainWindow::showStatusbarMessage(const QString &message)
+{
+    Q_UNUSED(time);
+    QString resultMessage;
+    resultMessage = "[" + QDateTime::currentDateTime().time().toString() + "] " + message;
+    ui->sb_MainStatusbar->showMessage(resultMessage, 10000);
 }
 
 void MainWindow::on_actionConvertToExcel_triggered()
