@@ -7,6 +7,8 @@
 #include <QCloseEvent>
 #include <QThread>
 #include <QSqlDatabase>
+#include <QLabel>
+#include <QPixmap>
 #include <QDebug>
 
 
@@ -16,6 +18,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     loadSettings();
+    this->advancedGUIInit();
 }
 
 MainWindow::~MainWindow()
@@ -29,6 +32,7 @@ void MainWindow::loadSettings()
     this->move(libStore.getFormPosition());
     this->resize(libStore.getFormGeometry());
     ui->splitter->restoreState(libStore.getByteArray("TestGeometry"));
+    ui->actionAutoconnect->setChecked(libStore.paramIsEnabled("Autoconnect"));
 }
 
 void MainWindow::saveSettings()
@@ -37,6 +41,23 @@ void MainWindow::saveSettings()
     libStore.saveFormPosition(this->pos());
     libStore.saveFormGeometry(this->size());
     libStore.setByteArray("TestGeometry", ui->splitter->saveState());
+    libStore.setParamEnabled("Autoconnect", ui->actionAutoconnect->isChecked());
+}
+
+void MainWindow::advancedGUIInit()
+{
+    sbl_ConnectionStatus = new QLabel();
+    QPixmap statusPixmap(QPixmap(":/Icons/icons/server.ico").scaledToHeight(ui->sb_MainStatusbar->height()*0.6));
+    sbl_ConnectionStatus->setPixmap(statusPixmap);
+    sbl_ConnectionStatus->setEnabled(false);
+
+    sbl_StorageStatus = new QLabel();
+    QPixmap storagePixmap(QPixmap(":/Icons/icons/storage.ico").scaledToHeight(ui->sb_MainStatusbar->height()*0.6));
+    sbl_StorageStatus->setPixmap(storagePixmap);
+    sbl_StorageStatus->setEnabled(false);
+
+    ui->sb_MainStatusbar->addPermanentWidget(sbl_ConnectionStatus);
+    ui->sb_MainStatusbar->addPermanentWidget(sbl_StorageStatus);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -80,24 +101,24 @@ void MainWindow::connectToDatabase(QVariantList param)
 {
     emit connectionClosed();
 
-    DatabaseContainer *mainConnection = new DatabaseContainer(param[0].toString(), param[4].toString(), param[1].toString(), param[2].toString(), param[3].toInt());
+    DatabaseContainer *mainConnection = new DatabaseContainer(param.at(0).toString(), param.at(4).toString(), param.at(1).toString(), param.at(2).toString(), param.at(3).toInt());
     QThread *mainConThread = new QThread();
     mainConnection->moveToThread(mainConThread);
     QObject::connect(mainConThread, &QThread::started, mainConnection, &DatabaseContainer::runConnection);
     QObject::connect(this, &MainWindow::connectionClosed, mainConnection, &DatabaseContainer::stopConnection, Qt::DirectConnection);
-    QObject::connect(this, &MainWindow::connectionClosed, mainConThread, &QThread::quit);
-    QObject::connect(mainConnection, &DatabaseContainer::connectionClose, mainConnection, &DatabaseContainer::deleteLater);
+    QObject::connect(mainConnection, &DatabaseContainer::connectionClose, mainConThread, &QThread::quit);
     QObject::connect(mainConThread, &QThread::finished, mainConThread, &QThread::deleteLater);
+    QObject::connect(mainConnection, &DatabaseContainer::databaseResult, sbl_ConnectionStatus, &QLabel::setEnabled);
     mainConThread->start();
 
-    DatabaseContainer *storageConnection = new DatabaseContainer(param[0].toString(), param[5].toString(), param[1].toString(), param[2].toString(), param[3].toInt());
+    DatabaseContainer *storageConnection = new DatabaseContainer(param.at(0).toString(), param.at(5).toString(), param.at(1).toString(), param.at(2).toString(), param.at(3).toInt());
     QThread *storageConThread = new QThread();
     storageConnection->moveToThread(storageConThread);
     QObject::connect(storageConThread, &QThread::started, storageConnection, &DatabaseContainer::runConnection);
-    QObject::connect(this, &MainWindow::connectionClosed, storageConThread, &QThread::quit);
     QObject::connect(this, &MainWindow::connectionClosed, storageConnection, &DatabaseContainer::stopConnection, Qt::DirectConnection);
-    QObject::connect(storageConnection, &DatabaseContainer::connectionClose, storageConnection, &DatabaseContainer::deleteLater);
+    QObject::connect(storageConnection, &DatabaseContainer::connectionClose, storageConThread, &QThread::quit);
     QObject::connect(storageConThread, &QThread::finished, storageConThread, &QThread::deleteLater);
+    QObject::connect(storageConnection, &DatabaseContainer::databaseResult, sbl_StorageStatus, &QLabel::setEnabled);
     storageConThread->start();
 }
 

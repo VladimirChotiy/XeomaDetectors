@@ -24,8 +24,7 @@ public slots:
     void stopConnection();
 
 signals:
-    void databaseOpen();
-    void errorOpeningDatabase();
+    void databaseResult(bool result);
     void connectionClose();
 };
 

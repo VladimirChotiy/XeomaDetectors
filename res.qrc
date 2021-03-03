@@ -16,5 +16,7 @@
         <file>icons/rep_common.ico</file>
         <file>icons/rep_designer.ico</file>
         <file>icons/excel_files.ico</file>
+        <file>icons/server.ico</file>
+        <file>icons/storage.ico</file>
     </qresource>
 </RCC>
