@@ -25,7 +25,7 @@
     <normaloff>:/Icons/icons/app.ico</normaloff>:/Icons/icons/app.ico</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QHBoxLayout" name="horizontalLayout_2">
+   <layout class="QHBoxLayout" name="lay_CentralWidget">
     <item>
      <widget class="QSplitter" name="splitter">
       <property name="orientation">

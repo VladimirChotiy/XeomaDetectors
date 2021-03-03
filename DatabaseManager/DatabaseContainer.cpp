@@ -22,9 +22,16 @@ void DatabaseContainer::runConnection()
     mainDB.setPassword(password);
 
     if (!mainDB.open()) {
+        emit errorOpeningDatabase();
         qDebug() << "Error opening DB: " << dbName << Qt::endl << mainDB.lastError().text();
+    }else {
+        emit databaseOpen();
     }
 
     resultQuery = new QSqlQuery(mainDB);
-    qDebug() << QThread::currentThread();
+}
+
+void DatabaseContainer::stopConnection()
+{
+    QSqlDatabase::removeDatabase(dbName);
 }

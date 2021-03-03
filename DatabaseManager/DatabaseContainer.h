@@ -21,9 +21,12 @@ private:
 
 public slots:
     void runConnection();
+    void stopConnection();
 
 signals:
-
+    void databaseOpen();
+    void errorOpeningDatabase();
+    void connectionClose();
 };
 
 #endif // DATABASECONTAINER_H

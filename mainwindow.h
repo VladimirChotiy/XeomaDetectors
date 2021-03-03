@@ -31,5 +31,10 @@ private slots:
     void on_actionConnectToDatabase_triggered();
     void on_actionRaportDesigner_triggered();
     void connectToDatabase(QVariantList param);
+
+    void on_actionConvertToExcel_triggered();
+
+signals:
+    void connectionClosed();
 };
 #endif // MAINWINDOW_H

@@ -1,10 +1,12 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "StoreSettings.h"
-#include "DatabaseManager/ConnectionManager.h"
+#include "DatabaseManager/DatabaseContainer.h"
 #include "GUI/uiConnectionDialog/uiConnectionDialog.h"
 #include <QMessageBox>
 #include <QCloseEvent>
+#include <QThread>
+#include <QSqlDatabase>
 #include <QDebug>
 
 
@@ -40,6 +42,7 @@ void MainWindow::saveSettings()
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     saveSettings();
+    emit this->connectionClosed();
     event->accept();
 }
 
@@ -69,10 +72,36 @@ void MainWindow::on_actionConnectToDatabase_triggered()
 
 void MainWindow::on_actionRaportDesigner_triggered()
 {
+    emit connectionClosed();
 
 }
 
 void MainWindow::connectToDatabase(QVariantList param)
 {
-    qDebug() <<param;
+    emit connectionClosed();
+
+    DatabaseContainer *mainConnection = new DatabaseContainer(param[0].toString(), param[4].toString(), param[1].toString(), param[2].toString(), param[3].toInt());
+    QThread *mainConThread = new QThread();
+    mainConnection->moveToThread(mainConThread);
+    QObject::connect(mainConThread, &QThread::started, mainConnection, &DatabaseContainer::runConnection);
+    QObject::connect(this, &MainWindow::connectionClosed, mainConnection, &DatabaseContainer::stopConnection, Qt::DirectConnection);
+    QObject::connect(this, &MainWindow::connectionClosed, mainConThread, &QThread::quit);
+    QObject::connect(mainConnection, &DatabaseContainer::connectionClose, mainConnection, &DatabaseContainer::deleteLater);
+    QObject::connect(mainConThread, &QThread::finished, mainConThread, &QThread::deleteLater);
+    mainConThread->start();
+
+    DatabaseContainer *storageConnection = new DatabaseContainer(param[0].toString(), param[5].toString(), param[1].toString(), param[2].toString(), param[3].toInt());
+    QThread *storageConThread = new QThread();
+    storageConnection->moveToThread(storageConThread);
+    QObject::connect(storageConThread, &QThread::started, storageConnection, &DatabaseContainer::runConnection);
+    QObject::connect(this, &MainWindow::connectionClosed, storageConThread, &QThread::quit);
+    QObject::connect(this, &MainWindow::connectionClosed, storageConnection, &DatabaseContainer::stopConnection, Qt::DirectConnection);
+    QObject::connect(storageConnection, &DatabaseContainer::connectionClose, storageConnection, &DatabaseContainer::deleteLater);
+    QObject::connect(storageConThread, &QThread::finished, storageConThread, &QThread::deleteLater);
+    storageConThread->start();
+}
+
+void MainWindow::on_actionConvertToExcel_triggered()
+{
+    qDebug() << QSqlDatabase::connectionNames();
 }
