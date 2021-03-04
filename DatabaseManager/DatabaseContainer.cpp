@@ -39,3 +39,14 @@ void DatabaseContainer::stopConnection()
     emit this->databaseResult(false);
     emit this->connectionClose();
 }
+
+void DatabaseContainer::queryRequest(const QString &sqlRequest)
+{
+    qDebug() << "Conteiner: " << sqlRequest;
+    if (resultQuery->exec(sqlRequest)){
+        emit this->resultQueryReady(*resultQuery);
+        emit this->statusMessage("Запрос к БД успешно выполнен.");
+    }else {
+        emit this->statusMessage("Ошибка выполнения запроса к БД.");
+    }
+}

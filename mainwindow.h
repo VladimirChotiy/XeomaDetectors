@@ -7,6 +7,7 @@
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 class QLabel;
+class QSqlQuery;
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
@@ -38,8 +39,10 @@ private slots:
     void on_actionConvertToExcel_triggered();
     void connectToDatabase(QVariantList param);
     void showStatusbarMessage(const QString& message);
+    void getSqlRequest(QSqlQuery& sqlQuery);
 
 signals:
     void connectionClosed();
+    void sendSqlRequest(const QString& sqlRequest);
 };
 #endif // MAINWINDOW_H

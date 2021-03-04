@@ -22,11 +22,13 @@ private:
 public slots:
     void runConnection();
     void stopConnection();
+    void queryRequest(const QString& sqlRequest);
 
 signals:
     void databaseResult(bool result);
     void connectionClose();
     void statusMessage(const QString& message);
+    void resultQueryReady(QSqlQuery& resultQuery);
 };
 
 #endif // DATABASECONTAINER_H

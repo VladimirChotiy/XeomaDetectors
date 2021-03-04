@@ -10,6 +10,7 @@
 #include <QLabel>
 #include <QPixmap>
 #include <QDateTime>
+#include <QSqlQuery>
 #include <QDebug>
 
 
@@ -94,7 +95,7 @@ void MainWindow::on_actionConnectToDatabase_triggered()
 
 void MainWindow::on_actionRaportDesigner_triggered()
 {
-    emit connectionClosed();
+    emit this->sendSqlRequest("SELECT * FROM udb_detectors.tbl_protocol");
 
 }
 
@@ -111,6 +112,8 @@ void MainWindow::connectToDatabase(QVariantList param)
     QObject::connect(mainConThread, &QThread::finished, mainConThread, &QThread::deleteLater);
     QObject::connect(mainConnection, &DatabaseContainer::databaseResult, sbl_ConnectionStatus, &QLabel::setEnabled);
     QObject::connect(mainConnection, &DatabaseContainer::statusMessage, this, &MainWindow::showStatusbarMessage);
+    QObject::connect(this, &MainWindow::sendSqlRequest, mainConnection, &DatabaseContainer::queryRequest, Qt::DirectConnection);
+    QObject::connect(mainConnection, &DatabaseContainer::resultQueryReady, this, &MainWindow::getSqlRequest, Qt::DirectConnection);
     mainConThread->start();
 
     DatabaseContainer *storageConnection = new DatabaseContainer(param.at(0).toString(), param.at(5).toString(), param.at(1).toString(), param.at(2).toString(), param.at(3).toInt());
@@ -131,6 +134,13 @@ void MainWindow::showStatusbarMessage(const QString &message)
     QString resultMessage;
     resultMessage = "[" + QDateTime::currentDateTime().time().toString() + "] " + message;
     ui->sb_MainStatusbar->showMessage(resultMessage, 10000);
+}
+
+void MainWindow::getSqlRequest(QSqlQuery& sqlQuery)
+{
+    while (sqlQuery.next()) {
+        qDebug() << sqlQuery.value(0).toInt() << sqlQuery.value(1).toInt() << sqlQuery.value(2).toInt() << sqlQuery.value(3).toDateTime().toString();
+    };
 }
 
 void MainWindow::on_actionConvertToExcel_triggered()
