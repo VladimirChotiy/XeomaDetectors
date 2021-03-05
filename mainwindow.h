@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QVariantList>
+#include "DatabaseManager/StructureTreeModel.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -25,6 +26,9 @@ private:
     void advancedGUIInit();
     QLabel *sbl_ConnectionStatus;
     QLabel *sbl_StorageStatus;
+    StructureTreeModel *structureModel;
+    QSqlQuery *objQuery;
+    QSqlQuery *detQuery;
 
     // QWidget interface
 protected:

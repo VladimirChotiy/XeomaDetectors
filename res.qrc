@@ -18,5 +18,7 @@
         <file>icons/excel_files.ico</file>
         <file>icons/server.ico</file>
         <file>icons/storage.ico</file>
+        <file>icons/export.ico</file>
+        <file>icons/import.ico</file>
     </qresource>
 </RCC>
