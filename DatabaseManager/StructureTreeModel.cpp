@@ -1,11 +1,13 @@
 #include "StructureTreeModel.h"
 #include "TreeQueryItem.h"
 
-StructureTreeModel::StructureTreeModel(const QSqlQuery &objQuery, const QSqlQuery &detQuery, QObject *parent) :
+StructureTreeModel::StructureTreeModel(QSqlQuery &objQuery, QSqlQuery &detQuery, QObject *parent) :
     QAbstractItemModel(parent)
 {
+    objectsQuery = new QSqlQuery(objQuery);
+    detectorsQuery = new QSqlQuery(detQuery);
     rootItem = new TreeQueryItem(QSqlRecord(), TreeQueryItem::TreeItemType::Header);
-    setupModelData(rootItem);
+    this->setupModelData(rootItem);
 }
 
 StructureTreeModel::~StructureTreeModel()
@@ -81,4 +83,12 @@ QVariant StructureTreeModel::data(const QModelIndex &index, int role) const
 
     TreeQueryItem *item = static_cast<TreeQueryItem*>(index.internalPointer());
     return item->data(index.column());
+}
+
+void StructureTreeModel::setupModelData(TreeQueryItem *parent)
+{
+    while (objectsQuery->next()) {
+        TreeQueryItem *newChild = new TreeQueryItem(objectsQuery->record(), TreeQueryItem::TreeItemType::Object);
+        parent->appendChild(newChild);
+    }
 }

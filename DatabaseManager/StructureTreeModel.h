@@ -15,7 +15,7 @@ class StructureTreeModel : public QAbstractItemModel
     Q_OBJECT
 
 public:
-    explicit StructureTreeModel(const QSqlQuery &objQuery, const QSqlQuery &detQuery, QObject *parent = nullptr);
+    explicit StructureTreeModel(QSqlQuery &objQuery, QSqlQuery &detQuery, QObject *parent = nullptr);
     ~StructureTreeModel();
 
     virtual QModelIndex index(int row, int column, const QModelIndex &parent) const override;
@@ -25,9 +25,10 @@ public:
     virtual QVariant data(const QModelIndex &index, int role) const override;
 
 private:
-    TreeQueryItem *rootItem;
     void setupModelData(TreeQueryItem *parent);
-    QSqlQuery *
+    TreeQueryItem *rootItem;
+    QSqlQuery *objectsQuery;
+    QSqlQuery *detectorsQuery;
 };
 
 #endif // STRUCTURETREEMODEL_H
