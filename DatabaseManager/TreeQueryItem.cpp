@@ -1,8 +1,8 @@
 #include "TreeQueryItem.h"
 #include <QPixmap>
 
-TreeQueryItem::TreeQueryItem(const QSqlRecord data, TreeItemType itemType, TreeQueryItem *parent) :
-    dataRecord(data), m_parentItem(parent), iType(itemType)
+TreeQueryItem::TreeQueryItem(const QVector<QVariant> &data, TreeQueryItem *parent) :
+    m_itemData(data), m_parentItem(parent)
 {
 }
 
@@ -18,7 +18,7 @@ void TreeQueryItem::appendChild(TreeQueryItem *child)
 
 TreeQueryItem *TreeQueryItem::child(int row)
 {
-    if (row < 0 || row > m_childItems.size()) {
+    if (row < 0 || row >= m_childItems.size()) {
         return nullptr;
     }
     return m_childItems.at(row);
@@ -31,29 +31,15 @@ int TreeQueryItem::childCount() const
 
 int TreeQueryItem::columnCount() const
 {
-    return dataRecord.count();
+    return m_itemData.count();
 }
 
 QVariant TreeQueryItem::data(int column) const
 {
-    switch (iType) {
-    case TreeItemType::Object: {
-        return dataRecord.value(column);
-        break;
+    if (column < 0 || column > m_itemData.size()) {
+        return QVariant();
     }
-    case TreeItemType::Detector: {
-        if (column == 0) {
-            if (dataRecord.value(0).toBool()) {
-                return QPixmap(":/Icons/icons/export.ico");
-            }else {
-                return QPixmap(":/Icons/icons/import.ico");
-            }
-        }
-        return dataRecord.value(column);
-        break;
-    }
-    default: return QVariant();
-    }
+    return m_itemData.at(column);
 }
 
 int TreeQueryItem::row() const

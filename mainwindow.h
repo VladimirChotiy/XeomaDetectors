@@ -26,9 +26,7 @@ private:
     void advancedGUIInit();
     QLabel *sbl_ConnectionStatus;
     QLabel *sbl_StorageStatus;
-    StructureTreeModel *structureModel;
-    QSqlQuery *objQuery;
-    QSqlQuery *detQuery;
+    StructureTreeModel *testModel;
 
     // QWidget interface
 protected:
@@ -43,7 +41,7 @@ private slots:
     void on_actionConvertToExcel_triggered();
     void connectToDatabase(QVariantList param);
     void showStatusbarMessage(const QString& message);
-    void getSqlRequest(QSqlQuery& sqlQuery);
+    void getSqlRequest(const QSqlQuery *sqlQuery);
 
 signals:
     void connectionClosed();

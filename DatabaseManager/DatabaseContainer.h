@@ -28,7 +28,7 @@ signals:
     void databaseResult(bool result);
     void connectionClose();
     void statusMessage(const QString& message);
-    void resultQueryReady(QSqlQuery& resultQuery);
+    void resultQueryReady(const QSqlQuery *resultQuery);
 };
 
 #endif // DATABASECONTAINER_H

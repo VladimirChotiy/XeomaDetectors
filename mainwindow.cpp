@@ -21,9 +21,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     loadSettings();
     this->advancedGUIInit();
-
-    objQuery = new QSqlQuery();
-    detQuery = new QSqlQuery();
+    testModel = new StructureTreeModel(this);
 }
 
 MainWindow::~MainWindow()
@@ -98,7 +96,7 @@ void MainWindow::on_actionConnectToDatabase_triggered()
 
 void MainWindow::on_actionRaportDesigner_triggered()
 {
-    emit this->sendSqlRequest("SELECT * FROM udb_detectors.tbl_objects");
+    emit this->sendSqlRequest("SELECT tbl_detectors.id, tbl_detectors.name, tbl_detectors.direct, tbl_detectors.count, tbl_detectors.obj_id, tbl_objects.name, tbl_objects.address FROM tbl_detectors LEFT JOIN tbl_objects ON tbl_detectors.obj_id = tbl_objects.id ORDER BY tbl_detectors.obj_id, tbl_detectors.id");
 
 }
 
@@ -143,15 +141,10 @@ void MainWindow::showStatusbarMessage(const QString &message)
     ui->sb_MainStatusbar->showMessage(resultMessage, 10000);
 }
 
-void MainWindow::getSqlRequest(QSqlQuery& sqlQuery)
+void MainWindow::getSqlRequest(const QSqlQuery *sqlQuery)
 {
-    structureModel = new StructureTreeModel(sqlQuery, *detQuery, this);
-    ui->treeView->setModel(structureModel);
-    //    while (sqlQuery.next()) {
-//        qDebug() << sqlQuery.value(0).toInt() << sqlQuery.value(1).toString() << sqlQuery.value(2).toString();
-//    };
-
-
+    testModel->setQuery(sqlQuery);
+    ui->treeView->setModel(testModel);
 }
 
 void MainWindow::on_actionConvertToExcel_triggered()
