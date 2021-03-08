@@ -145,6 +145,7 @@ void MainWindow::getSqlRequest(const QSqlQuery *sqlQuery)
 {
     testModel->setQuery(sqlQuery);
     ui->treeView->setModel(testModel);
+    ui->treeView->setStatusTip("111");
 }
 
 void MainWindow::on_actionConvertToExcel_triggered()

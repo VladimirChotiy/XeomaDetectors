@@ -36,7 +36,7 @@ int TreeQueryItem::columnCount() const
 
 QVariant TreeQueryItem::data(int column) const
 {
-    if (column < 0 || column > m_itemData.size()) {
+    if (column < 0 || column >= m_itemData.size()) {
         return QVariant();
     }
     return m_itemData.at(column);

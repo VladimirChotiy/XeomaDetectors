@@ -1,11 +1,14 @@
 #include "StructureTreeModel.h"
 #include "TreeQueryItem.h"
+#include <QFont>
+#include <QIcon>
+#include <QBrush>
 #include <QDebug>
 
 StructureTreeModel::StructureTreeModel(QObject *parent) :
     QAbstractItemModel(parent)
 {
-    rootItem = new TreeQueryItem({"ID", "Объект", "Адрес"});
+    rootItem = new TreeQueryItem({"ID", "Объект", "Адрес", "Счетчик"});
 }
 
 StructureTreeModel::~StructureTreeModel()
@@ -24,6 +27,7 @@ void StructureTreeModel::setQuery(const QSqlQuery *query)
             objData.push_back(dataQuery.value(4).toInt());
             objData.push_back(dataQuery.value(5).toString());
             objData.push_back(dataQuery.value(6).toString());
+            objData.push_back("");
             TreeQueryItem *objChild = new TreeQueryItem(objData, rootItem);
             objChild->parentItem()->appendChild(objChild);
             objId = dataQuery.value(4).toInt();
@@ -101,7 +105,8 @@ int StructureTreeModel::rowCount(const QModelIndex &parent) const
 int StructureTreeModel::columnCount(const QModelIndex &parent) const
 {
     if (parent.isValid()) {
-        return static_cast<TreeQueryItem*>(parent.internalPointer())->columnCount();
+        int test = static_cast<TreeQueryItem*>(parent.internalPointer())->columnCount();
+        return test;
     }
     return rootItem->columnCount();
 }
@@ -112,10 +117,83 @@ QVariant StructureTreeModel::data(const QModelIndex &index, int role) const
         return QVariant();
     }
 
-    if (role != Qt::DisplayRole) {
+    TreeQueryItem *item = static_cast<TreeQueryItem*>(index.internalPointer());
+    switch (role) {
+    case Qt::DisplayRole: {
+        if (item->parentItem() != rootItem && index.column() == 2) {
+            if (item->data(2) == 1) {
+                return QString("Выезд");
+            }else {
+                return QString("Въезд");
+            }
+        }
+        return item->data(index.column());
+        break;
+    }
+    case Qt::DecorationRole: {
+        if (item->parentItem() != rootItem && index.column() == 0) {
+            if (item->data(2) == 1) {
+                return QIcon(":/Icons/icons/export.ico");
+            }else {
+                return QIcon(":/Icons/icons/import.ico");
+            }
+        }
+        return QVariant();
+        break;
+    }
+    case Qt::BackgroundRole: {
+        if (item->parentItem() == rootItem) {
+            return QBrush(Qt::lightGray, Qt::SolidPattern);
+        }
         return QVariant();
     }
-
-    TreeQueryItem *item = static_cast<TreeQueryItem*>(index.internalPointer());
+    case Qt::FontRole: {
+        if (item->parentItem() == rootItem) {
+            return QFont("Arial", 9, QFont::Bold);
+        }
+        return QVariant();
+    }
+    case Qt::TextAlignmentRole: {
+        if (item->parentItem() != rootItem && index.column() == 2) {
+            return Qt::AlignCenter;
+        }
+        return QVariant(Qt::AlignVCenter | Qt::AlignLeft);
+    }
+    default: return QVariant();
+    }
     return item->data(index.column());
+}
+
+
+QVariant StructureTreeModel::headerData(int section, Qt::Orientation orientation, int role) const
+{
+    if (orientation == Qt::Horizontal) {
+        switch (role) {
+        case Qt::DisplayRole: {
+            return rootItem->data(section);
+            break;
+        }
+        case Qt::TextAlignmentRole: {
+            return Qt::AlignCenter;
+            break;
+        }
+        case Qt::FontRole: {
+            return QFont("Arial", 10, QFont::Bold);
+        }
+        default: QAbstractItemModel::headerData(section, orientation, role);
+        }
+    }
+
+    if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
+        return rootItem->data(section);
+    }
+    return QVariant();
+}
+
+Qt::ItemFlags StructureTreeModel::flags(const QModelIndex &index) const
+{
+    if (!index.isValid()) {
+        return Qt::NoItemFlags;
+    }
+    return QAbstractItemModel::flags(index);
 }
