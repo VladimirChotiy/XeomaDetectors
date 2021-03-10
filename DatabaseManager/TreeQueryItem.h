@@ -3,20 +3,13 @@
 
 #include <QVariant>
 #include <QVector>
-#include <QSqlRecord>
+#include <QStringList>
 
 class TreeQueryItem
 {
 
 public:
-    enum TreeItemType {
-        Header,
-        Object,
-        Detector
-    };
-
-
-    explicit TreeQueryItem(const QSqlRecord data, TreeItemType itemType, TreeQueryItem *parent = nullptr);
+    explicit TreeQueryItem(const QVector<QVariant> &data, TreeQueryItem *parent = nullptr);
     ~TreeQueryItem();
 
     void appendChild(TreeQueryItem *child);
@@ -30,9 +23,8 @@ public:
 
 private:
     QVector<TreeQueryItem*> m_childItems;
-    const QSqlRecord dataRecord;
+    QVector<QVariant> m_itemData;
     TreeQueryItem *m_parentItem;;
-    TreeItemType iType;
 };
 
 #endif // TREEQUERYITEM_H

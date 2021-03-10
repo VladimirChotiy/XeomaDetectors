@@ -5,6 +5,7 @@
 #include <QSqlError>
 #include <QDebug>
 #include <QThread>
+#include <QVariant>
 
 DatabaseContainer::DatabaseContainer(const QString pHostname, const QString pDatabaseName, const QString pUserName, const QString pPassword, int pPort, QObject *parent) :
     QObject(parent), hostname(pHostname), dbName(pDatabaseName), userName(pUserName), password(pPassword), port(pPort)
@@ -40,12 +41,12 @@ void DatabaseContainer::stopConnection()
     emit this->connectionClose();
 }
 
-void DatabaseContainer::queryRequest(const QString &sqlRequest)
+void DatabaseContainer::queryRequest(int type, const QString &sqlRequest)
 {
-    qDebug() << "Conteiner: " << sqlRequest;
+    //qDebug() << "Conteiner: " << sqlRequest << QThread::currentThread();
     if (resultQuery->exec(sqlRequest)){
-        emit this->resultQueryReady(*resultQuery);
-        emit this->statusMessage("Запрос к БД успешно выполнен.");
+        emit this->resultQueryReady(type, resultQuery);
+        emit this->statusMessage("Запрос к БД успешно выполнен. ");
     }else {
         emit this->statusMessage("Ошибка выполнения запроса к БД.");
     }

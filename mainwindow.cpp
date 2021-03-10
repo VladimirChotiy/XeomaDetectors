@@ -11,6 +11,9 @@
 #include <QPixmap>
 #include <QDateTime>
 #include <QSqlQuery>
+#include <QSqlQueryModel>
+#include <QModelIndexList>
+#include <QMenu>
 #include <QDebug>
 
 
@@ -21,9 +24,9 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     loadSettings();
     this->advancedGUIInit();
-
-    objQuery = new QSqlQuery();
-    detQuery = new QSqlQuery();
+    structureModel = new StructureTreeModel(this);
+    protocolModel = new QSqlQueryModel(this);
+    ui->tbl_ProtocolTable->setModel(protocolModel);
 }
 
 MainWindow::~MainWindow()
@@ -36,6 +39,9 @@ void MainWindow::loadSettings()
     StoreSettings libStore(this);
     this->move(libStore.getFormPosition());
     this->resize(libStore.getFormGeometry());
+    if (libStore.paramIsEnabled("Maximized")) {
+        this->showMaximized();
+    }
     ui->splitter->restoreState(libStore.getByteArray("TestGeometry"));
     ui->actionAutoconnect->setChecked(libStore.paramIsEnabled("Autoconnect"));
 }
@@ -47,6 +53,7 @@ void MainWindow::saveSettings()
     libStore.saveFormGeometry(this->size());
     libStore.setByteArray("TestGeometry", ui->splitter->saveState());
     libStore.setParamEnabled("Autoconnect", ui->actionAutoconnect->isChecked());
+    libStore.setParamEnabled("Maximized", this->isMaximized());
 }
 
 void MainWindow::advancedGUIInit()
@@ -63,6 +70,9 @@ void MainWindow::advancedGUIInit()
 
     ui->sb_MainStatusbar->addPermanentWidget(sbl_ConnectionStatus);
     ui->sb_MainStatusbar->addPermanentWidget(sbl_StorageStatus);
+
+    //ui->tw_Structure->addAction(ui->actionDeleteObject);
+    QObject::connect(ui->tw_Structure, &QTreeView::customContextMenuRequested, this, &MainWindow::showTreeViewContextMenu);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -98,8 +108,7 @@ void MainWindow::on_actionConnectToDatabase_triggered()
 
 void MainWindow::on_actionRaportDesigner_triggered()
 {
-    emit this->sendSqlRequest("SELECT * FROM udb_detectors.tbl_objects");
-
+    qDebug() << ui->tw_Structure->selectionModel()->currentIndex();
 }
 
 void MainWindow::connectToDatabase(QVariantList param)
@@ -107,7 +116,6 @@ void MainWindow::connectToDatabase(QVariantList param)
     emit connectionClosed();
 
     qRegisterMetaType<DatabaseContainer*>("DatabaseContainer");
-    //qRegisterMetaType<QSqlQuery*>("sendQuery");
 
     DatabaseContainer *mainConnection = new DatabaseContainer(param.at(0).toString(), param.at(4).toString(), param.at(1).toString(), param.at(2).toString(), param.at(3).toInt());
     QThread *mainConThread = new QThread();
@@ -120,6 +128,7 @@ void MainWindow::connectToDatabase(QVariantList param)
     QObject::connect(mainConnection, &DatabaseContainer::statusMessage, this, &MainWindow::showStatusbarMessage);
     QObject::connect(this, &MainWindow::sendSqlRequest, mainConnection, &DatabaseContainer::queryRequest, Qt::QueuedConnection);
     QObject::connect(mainConnection, &DatabaseContainer::resultQueryReady, this, &MainWindow::getSqlRequest, Qt::QueuedConnection);
+    QObject::connect(mainConnection, &DatabaseContainer::databaseResult, this, &MainWindow::refreshStructure, Qt::QueuedConnection);
     mainConThread->start();
 
     DatabaseContainer *storageConnection = new DatabaseContainer(param.at(0).toString(), param.at(5).toString(), param.at(1).toString(), param.at(2).toString(), param.at(3).toInt());
@@ -143,18 +152,84 @@ void MainWindow::showStatusbarMessage(const QString &message)
     ui->sb_MainStatusbar->showMessage(resultMessage, 10000);
 }
 
-void MainWindow::getSqlRequest(QSqlQuery& sqlQuery)
+void MainWindow::selectNewTreeItem(const QModelIndex &newIndex, const QModelIndex &oldIndex)
 {
-    structureModel = new StructureTreeModel(sqlQuery, *detQuery, this);
-    ui->treeView->setModel(structureModel);
-    //    while (sqlQuery.next()) {
-//        qDebug() << sqlQuery.value(0).toInt() << sqlQuery.value(1).toString() << sqlQuery.value(2).toString();
-//    };
+    Q_UNUSED(oldIndex)
+    bool isRoot = structureModel->parentIsRoot(newIndex);
+    ui->actionAddObject->setEnabled(isRoot);
+    ui->actionEditObject->setEnabled(isRoot);
+    ui->actionDeleteObject->setEnabled(isRoot);
+    ui->actionAddDetector->setEnabled(!isRoot);
+    ui->actionEditDetector->setEnabled(!isRoot);
+    ui->actionDeleteDetector->setEnabled(!isRoot);
+}
 
+void MainWindow::refreshStructure(bool result)
+{
+    ui->actionRefresh->setEnabled(result);
+    if (result){
+        emit this->sendSqlRequest(0, "SELECT tbl_detectors.id, tbl_detectors.name, tbl_detectors.direct, tbl_detectors.count, tbl_detectors.obj_id, tbl_objects.name, tbl_objects.address FROM tbl_detectors LEFT JOIN tbl_objects ON tbl_detectors.obj_id = tbl_objects.id ORDER BY tbl_detectors.obj_id, tbl_detectors.id");
+    }
+}
 
+void MainWindow::showTreeViewContextMenu(const QPoint &point)
+{
+    QModelIndex index = ui->tw_Structure->indexAt(point);
+    if (index.isValid()) {
+        QMenu *contextMenu = new QMenu(this);
+        QActionGroup *contextGroup = new QActionGroup(this);
+        contextMenu->addAction(ui->actionRefresh);
+        contextMenu->addSeparator();
+        if (structureModel->parentIsRoot(index)) {
+            contextGroup->addAction(ui->actionAddObject);
+            contextGroup->addAction(ui->actionEditObject);
+            contextGroup->addAction(ui->actionDeleteObject);
+            contextMenu->addAction(ui->actionAddObject);
+            contextMenu->addAction(ui->actionEditObject);
+            contextMenu->addAction(ui->actionDeleteObject);
+        }else {
+            contextGroup->addAction(ui->actionAddDetector);
+            contextGroup->addAction(ui->actionEditDetector);
+            contextGroup->addAction(ui->actionDeleteDetector);
+            contextMenu->addAction(ui->actionAddDetector);
+            contextMenu->addAction(ui->actionEditDetector);
+            contextMenu->addAction(ui->actionDeleteDetector);
+        }
+        contextMenu->popup(ui->tw_Structure->viewport()->mapToGlobal(point));
+    }
+}
+
+void MainWindow::getSqlRequest(int type, const QSqlQuery *sqlQuery)
+{
+    switch (type) {
+    case 0: {
+            structureModel->setQuery(*sqlQuery);
+            ui->tw_Structure->setModel(structureModel);
+            QObject::connect(ui->tw_Structure->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &MainWindow::selectNewTreeItem);
+            break;
+        }
+    case 1: {
+            protocolModel->setQuery(*sqlQuery);
+            break;
+        }
+    }
 }
 
 void MainWindow::on_actionConvertToExcel_triggered()
 {
     qDebug() << QSqlDatabase::connectionNames();
+}
+
+void MainWindow::on_actionRefresh_triggered()
+{
+    QStringList sqlFilter;
+    QModelIndexList testIndex = ui->tw_Structure->selectionModel()->selectedRows();
+    for (QModelIndex item : testIndex) {
+        if (structureModel->parentIsRoot(item)) {
+            sqlFilter.append(QString("tbl_detectors.obj_id = %1").arg(item.data().toInt()));
+        }else {
+            sqlFilter.append(QString("tbl_detectors.id = %1").arg(item.data().toInt()));
+        }
+    }
+    emit this->sendSqlRequest(1, "SELECT tbl_protocol.id AS protID, tbl_detectors.name AS detNAME, tbl_detectors.direct, tbl_protocol.event_time, tbl_objects.name AS objNAME, tbl_objects.address FROM tbl_protocol LEFT JOIN tbl_detectors ON tbl_protocol.det_id = tbl_detectors.id LEFT JOIN tbl_objects ON tbl_detectors.obj_id = tbl_objects.id WHERE " + sqlFilter.join(" OR "));
 }
