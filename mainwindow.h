@@ -8,7 +8,7 @@
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 class QLabel;
-class QSqlQuery;
+class QSqlQueryModel;
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
@@ -26,7 +26,8 @@ private:
     void advancedGUIInit();
     QLabel *sbl_ConnectionStatus;
     QLabel *sbl_StorageStatus;
-    StructureTreeModel *testModel;
+    StructureTreeModel *structureModel;
+    QSqlQueryModel *protocolModel;
 
     // QWidget interface
 protected:
@@ -40,11 +41,14 @@ private slots:
     void on_actionRaportDesigner_triggered();
     void on_actionConvertToExcel_triggered();
     void connectToDatabase(QVariantList param);
+    void on_actionRefresh_triggered();
+    void getSqlRequest(int type, const QSqlQuery *sqlQuery);
     void showStatusbarMessage(const QString& message);
-    void getSqlRequest(const QSqlQuery *sqlQuery);
+    void selectNewTreeItem(const QModelIndex &newIndex, const QModelIndex &oldIndex);
+    void refreshStructure(bool result);
 
 signals:
     void connectionClosed();
-    void sendSqlRequest(const QString& sqlRequest);
+    void sendSqlRequest(int type, const QString& sqlRequest);
 };
 #endif // MAINWINDOW_H

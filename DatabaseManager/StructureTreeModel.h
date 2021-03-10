@@ -18,6 +18,7 @@ public:
     explicit StructureTreeModel(QObject *parent = nullptr);
     ~StructureTreeModel();
     void setQuery(const QSqlQuery *query);
+    bool parentIsRoot(const QModelIndex &index) const;
 
     QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const override;
     QModelIndex parent(const QModelIndex &child) const override;

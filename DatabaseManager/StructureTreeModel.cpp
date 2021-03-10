@@ -54,6 +54,18 @@ void StructureTreeModel::setQuery(const QSqlQuery *query)
     }
 }
 
+bool StructureTreeModel::parentIsRoot(const QModelIndex &index) const
+{
+    TreeQueryItem *checkItem;
+    checkItem = static_cast<TreeQueryItem*>(index.internalPointer());
+    TreeQueryItem *parentItem = checkItem->parentItem();
+    if (parentItem == rootItem) {
+        return true;
+    }else {
+        return false;
+    }
+}
+
 QModelIndex StructureTreeModel::index(int row, int column, const QModelIndex &parent) const
 {
     if (!hasIndex(row, column, parent)) {
@@ -132,7 +144,7 @@ QVariant StructureTreeModel::data(const QModelIndex &index, int role) const
     }
     case Qt::DecorationRole: {
         if (item->parentItem() != rootItem && index.column() == 0) {
-            if (item->data(2) == 1) {
+            if (item->data(2).toBool()) {
                 return QIcon(":/Icons/icons/export.ico");
             }else {
                 return QIcon(":/Icons/icons/import.ico");
