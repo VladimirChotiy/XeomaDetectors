@@ -55,6 +55,9 @@
               <height>0</height>
              </size>
             </property>
+            <property name="contextMenuPolicy">
+             <enum>Qt::CustomContextMenu</enum>
+            </property>
             <property name="editTriggers">
              <set>QAbstractItemView::DoubleClicked</set>
             </property>
@@ -296,6 +299,9 @@
    </property>
   </action>
   <action name="actionRefresh">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="res.qrc">
      <normaloff>:/Icons/icons/refresh.ico</normaloff>:/Icons/icons/refresh.ico</iconset>
@@ -308,6 +314,9 @@
    </property>
   </action>
   <action name="actionAddObject">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="res.qrc">
      <normaloff>:/Icons/icons/add.ico</normaloff>:/Icons/icons/add.ico</iconset>
@@ -320,6 +329,9 @@
    </property>
   </action>
   <action name="actionEditObject">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="res.qrc">
      <normaloff>:/Icons/icons/edit.ico</normaloff>:/Icons/icons/edit.ico</iconset>
@@ -332,6 +344,9 @@
    </property>
   </action>
   <action name="actionDeleteObject">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="res.qrc">
      <normaloff>:/Icons/icons/delete.ico</normaloff>:/Icons/icons/delete.ico</iconset>
@@ -344,6 +359,9 @@
    </property>
   </action>
   <action name="actionAddDetector">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="res.qrc">
      <normaloff>:/Icons/icons/add.ico</normaloff>:/Icons/icons/add.ico</iconset>
@@ -356,6 +374,9 @@
    </property>
   </action>
   <action name="actionEditDetector">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="res.qrc">
      <normaloff>:/Icons/icons/edit.ico</normaloff>:/Icons/icons/edit.ico</iconset>
@@ -368,6 +389,9 @@
    </property>
   </action>
   <action name="actionDeleteDetector">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="res.qrc">
      <normaloff>:/Icons/icons/delete.ico</normaloff>:/Icons/icons/delete.ico</iconset>

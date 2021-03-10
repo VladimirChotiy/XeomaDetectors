@@ -16,9 +16,9 @@ StructureTreeModel::~StructureTreeModel()
     delete rootItem;
 }
 
-void StructureTreeModel::setQuery(const QSqlQuery *query)
+void StructureTreeModel::setQuery(const QSqlQuery &query)
 {
-    QSqlQuery dataQuery = *query;
+    QSqlQuery dataQuery = query;
     int objId = -1;
     TreeQueryItem *parentItem = rootItem;
     while (dataQuery.next()) {

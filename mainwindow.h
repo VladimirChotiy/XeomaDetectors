@@ -46,6 +46,7 @@ private slots:
     void showStatusbarMessage(const QString& message);
     void selectNewTreeItem(const QModelIndex &newIndex, const QModelIndex &oldIndex);
     void refreshStructure(bool result);
+    void showTreeViewContextMenu(const QPoint &point);
 
 signals:
     void connectionClosed();
