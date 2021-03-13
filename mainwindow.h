@@ -40,13 +40,20 @@ private slots:
     void on_actionConnectToDatabase_triggered();
     void on_actionRaportDesigner_triggered();
     void on_actionConvertToExcel_triggered();
-    void connectToDatabase(QVariantList param);
     void on_actionRefresh_triggered();
+    void on_actionDeleteObject_triggered();
+    void on_actionDeleteDetector_triggered();
+    void on_actionAddObject_triggered();
+    void on_actionEditObject_triggered();
+    void on_actionAddDetector_triggered();
+    void on_actionEditDetector_triggered();
+    void connectToDatabase(QVariantList param);
     void getSqlRequest(int type, const QSqlQuery *sqlQuery);
     void showStatusbarMessage(const QString& message);
     void selectNewTreeItem(const QModelIndex &newIndex, const QModelIndex &oldIndex);
     void refreshStructure(bool result);
     void showTreeViewContextMenu(const QPoint &point);
+
 
 signals:
     void connectionClosed();

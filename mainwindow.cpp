@@ -3,16 +3,18 @@
 #include "StoreSettings.h"
 #include "DatabaseManager/DatabaseContainer.h"
 #include "GUI/uiConnectionDialog/uiConnectionDialog.h"
+#include "GUI/uiStructureDialog/uiStructObjectDialog.h"
+#include "GUI/uiStructureDialog/uiStructDetectorDialog.h"
 #include <QMessageBox>
 #include <QCloseEvent>
 #include <QThread>
-#include <QSqlDatabase>
 #include <QLabel>
 #include <QPixmap>
 #include <QDateTime>
 #include <QSqlQuery>
 #include <QSqlQueryModel>
 #include <QModelIndexList>
+#include <QMessageBox>
 #include <QMenu>
 #include <QDebug>
 
@@ -24,7 +26,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     loadSettings();
     this->advancedGUIInit();
-    structureModel = new StructureTreeModel(this);
     protocolModel = new QSqlQueryModel(this);
     ui->tbl_ProtocolTable->setModel(protocolModel);
 }
@@ -71,7 +72,6 @@ void MainWindow::advancedGUIInit()
     ui->sb_MainStatusbar->addPermanentWidget(sbl_ConnectionStatus);
     ui->sb_MainStatusbar->addPermanentWidget(sbl_StorageStatus);
 
-    //ui->tw_Structure->addAction(ui->actionDeleteObject);
     QObject::connect(ui->tw_Structure, &QTreeView::customContextMenuRequested, this, &MainWindow::showTreeViewContextMenu);
 }
 
@@ -156,10 +156,10 @@ void MainWindow::selectNewTreeItem(const QModelIndex &newIndex, const QModelInde
 {
     Q_UNUSED(oldIndex)
     bool isRoot = structureModel->parentIsRoot(newIndex);
-    ui->actionAddObject->setEnabled(isRoot);
+    ui->actionAddObject->setEnabled(true);
     ui->actionEditObject->setEnabled(isRoot);
     ui->actionDeleteObject->setEnabled(isRoot);
-    ui->actionAddDetector->setEnabled(!isRoot);
+    ui->actionAddDetector->setEnabled(true);
     ui->actionEditDetector->setEnabled(!isRoot);
     ui->actionDeleteDetector->setEnabled(!isRoot);
 }
@@ -168,7 +168,7 @@ void MainWindow::refreshStructure(bool result)
 {
     ui->actionRefresh->setEnabled(result);
     if (result){
-        emit this->sendSqlRequest(0, "SELECT tbl_detectors.id, tbl_detectors.name, tbl_detectors.direct, tbl_detectors.count, tbl_detectors.obj_id, tbl_objects.name, tbl_objects.address FROM tbl_detectors LEFT JOIN tbl_objects ON tbl_detectors.obj_id = tbl_objects.id ORDER BY tbl_detectors.obj_id, tbl_detectors.id");
+        emit this->sendSqlRequest(0, "SELECT tbl_detectors.id, tbl_detectors.name, tbl_detectors.direct, tbl_detectors.count, tbl_detectors.obj_id, tbl_objects.name, tbl_objects.address, tbl_objects.id FROM tbl_detectors RIGHT JOIN tbl_objects ON tbl_detectors.obj_id = tbl_objects.id ORDER BY tbl_objects.id, tbl_detectors.id");
     }
 }
 
@@ -179,22 +179,24 @@ void MainWindow::showTreeViewContextMenu(const QPoint &point)
         QMenu *contextMenu = new QMenu(this);
         QActionGroup *contextGroup = new QActionGroup(this);
         contextMenu->addAction(ui->actionRefresh);
-        contextMenu->addSeparator();
-        if (structureModel->parentIsRoot(index)) {
-            contextGroup->addAction(ui->actionAddObject);
+        //contextMenu->addSeparator();
+        //if (structureModel->parentIsRoot(index)) {
+        contextMenu->addSection("Объекты");
+        contextGroup->addAction(ui->actionAddObject);
             contextGroup->addAction(ui->actionEditObject);
             contextGroup->addAction(ui->actionDeleteObject);
             contextMenu->addAction(ui->actionAddObject);
             contextMenu->addAction(ui->actionEditObject);
             contextMenu->addAction(ui->actionDeleteObject);
-        }else {
+            contextMenu->addSection("Детекторы");
+        //}else {
             contextGroup->addAction(ui->actionAddDetector);
             contextGroup->addAction(ui->actionEditDetector);
             contextGroup->addAction(ui->actionDeleteDetector);
             contextMenu->addAction(ui->actionAddDetector);
             contextMenu->addAction(ui->actionEditDetector);
             contextMenu->addAction(ui->actionDeleteDetector);
-        }
+        //}
         contextMenu->popup(ui->tw_Structure->viewport()->mapToGlobal(point));
     }
 }
@@ -203,7 +205,10 @@ void MainWindow::getSqlRequest(int type, const QSqlQuery *sqlQuery)
 {
     switch (type) {
     case 0: {
-            structureModel->setQuery(*sqlQuery);
+            if (structureModel != nullptr) {
+                delete structureModel;
+            }
+            structureModel = new StructureTreeModel(*sqlQuery, this);
             ui->tw_Structure->setModel(structureModel);
             QObject::connect(ui->tw_Structure->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &MainWindow::selectNewTreeItem);
             break;
@@ -212,6 +217,11 @@ void MainWindow::getSqlRequest(int type, const QSqlQuery *sqlQuery)
             protocolModel->setQuery(*sqlQuery);
             break;
         }
+
+    case 2: {
+            this->refreshStructure(true);
+        }
+    default: break;
     }
 }
 
@@ -231,5 +241,91 @@ void MainWindow::on_actionRefresh_triggered()
             sqlFilter.append(QString("tbl_detectors.id = %1").arg(item.data().toInt()));
         }
     }
-    emit this->sendSqlRequest(1, "SELECT tbl_protocol.id AS protID, tbl_detectors.name AS detNAME, tbl_detectors.direct, tbl_protocol.event_time, tbl_objects.name AS objNAME, tbl_objects.address FROM tbl_protocol LEFT JOIN tbl_detectors ON tbl_protocol.det_id = tbl_detectors.id LEFT JOIN tbl_objects ON tbl_detectors.obj_id = tbl_objects.id WHERE " + sqlFilter.join(" OR "));
+    if (!sqlFilter.isEmpty()) {
+        this->showStatusbarMessage("Запрос к БД... подождите.");
+        emit this->sendSqlRequest(1, "SELECT tbl_protocol.id AS protID, tbl_detectors.name AS detNAME, tbl_detectors.direct, tbl_protocol.event_time, tbl_objects.name AS objNAME, tbl_objects.address FROM tbl_protocol LEFT JOIN tbl_detectors ON tbl_protocol.det_id = tbl_detectors.id LEFT JOIN tbl_objects ON tbl_detectors.obj_id = tbl_objects.id WHERE " + sqlFilter.join(" OR "));
+    }
+}
+
+void MainWindow::on_actionDeleteObject_triggered()
+{
+    int id = ui->tw_Structure->model()->data(ui->tw_Structure->model()->index(ui->tw_Structure->currentIndex().row(), 0), Qt::DisplayRole).toInt();
+    QString name = ui->tw_Structure->model()->data(ui->tw_Structure->model()->index(ui->tw_Structure->currentIndex().row(), 1), Qt::DisplayRole).toString();
+
+    QMessageBox::StandardButton result;
+    result = QMessageBox::warning(this, "Удаление объекта", QString("Вы действительно хотите удалить объект №%1 - ").arg(id) + name + "?", QMessageBox::StandardButton::Ok | QMessageBox::StandardButton::Cancel);
+    if (result == QMessageBox::StandardButton::Ok) {
+        emit this->sendSqlRequest(2, QString("DELETE FROM tbl_objects WHERE tbl_objects.id = %1").arg(id));
+    }
+}
+
+void MainWindow::on_actionDeleteDetector_triggered()
+{
+    int id = structureModel->data(structureModel->index(ui->tw_Structure->currentIndex().row(), 0, structureModel->parent(ui->tw_Structure->currentIndex())), Qt::DisplayRole).toInt();
+    QString name = structureModel->data(structureModel->index(ui->tw_Structure->currentIndex().row(), 1, structureModel->parent(ui->tw_Structure->currentIndex())), Qt::DisplayRole).toString();
+
+    QMessageBox::StandardButton result;
+    result = QMessageBox::warning(this, "Удаление детектора", QString("Вы действительно хотите удалить детектор №%1 - ").arg(id) + name + "?", QMessageBox::StandardButton::Ok | QMessageBox::StandardButton::Cancel);
+    if (result == QMessageBox::StandardButton::Ok) {
+        emit this->sendSqlRequest(2, QString("DELETE FROM tbl_detectors WHERE tbl_detectors.id = %1").arg(id));
+    }
+}
+
+void MainWindow::on_actionAddObject_triggered()
+{
+    uiStructObjectDialog *addObject = new uiStructObjectDialog(uiStructObjectDialog::ObjDialogType::New, QVariantList(), this);
+    addObject->setAttribute(Qt::WA_DeleteOnClose);
+    QObject::connect(addObject, &uiStructObjectDialog::sendResult, this, &MainWindow::sendSqlRequest);
+    addObject->open();
+}
+
+void MainWindow::on_actionEditObject_triggered()
+{
+    QVariantList sendParams;
+    sendParams.append(ui->tw_Structure->model()->data(ui->tw_Structure->model()->index(ui->tw_Structure->currentIndex().row(), 0), Qt::DisplayRole).toInt());
+    sendParams.append(ui->tw_Structure->model()->data(ui->tw_Structure->model()->index(ui->tw_Structure->currentIndex().row(), 1), Qt::DisplayRole).toString());
+    sendParams.append(ui->tw_Structure->model()->data(ui->tw_Structure->model()->index(ui->tw_Structure->currentIndex().row(), 2), Qt::DisplayRole).toString());
+
+    uiStructObjectDialog *editObject = new uiStructObjectDialog(uiStructObjectDialog::ObjDialogType::Edit, sendParams, this);
+    editObject->setAttribute(Qt::WA_DeleteOnClose);
+    QObject::connect(editObject, &uiStructObjectDialog::sendResult, this, &MainWindow::sendSqlRequest);
+    editObject->open();
+}
+
+void MainWindow::on_actionAddDetector_triggered()
+{
+    int parentIndex;
+    QModelIndex curIndex = ui->tw_Structure->currentIndex();
+    if (structureModel->parentIsRoot(curIndex)) {
+        parentIndex = ui->tw_Structure->model()->data(ui->tw_Structure->model()->index(curIndex.row(), 0), Qt::DisplayRole).toInt();
+    }else {
+        QModelIndex prIndex = structureModel->parent(curIndex);
+        parentIndex = ui->tw_Structure->model()->data(ui->tw_Structure->model()->index(prIndex.row(), 0), Qt::DisplayRole).toInt();
+    }
+
+    uiStructDetectorDialog *addDetector = new uiStructDetectorDialog(parentIndex, structureModel->getObjectList(), QVariantList(), this);
+    addDetector->setAttribute(Qt::WA_DeleteOnClose);
+    QObject::connect(addDetector, &uiStructDetectorDialog::sendSqlRequest, this, &MainWindow::sendSqlRequest);
+    addDetector->open();
+}
+
+void MainWindow::on_actionEditDetector_triggered()
+{
+    int parentIndex;
+    QModelIndex curIndex = ui->tw_Structure->currentIndex();
+    QVariantList sendParam;
+    QModelIndex prIndex = structureModel->parent(curIndex);
+    parentIndex = ui->tw_Structure->model()->data(ui->tw_Structure->model()->index(prIndex.row(), 0), Qt::DisplayRole).toInt();
+    sendParam << structureModel->data(structureModel->index(ui->tw_Structure->currentIndex().row(), 0, structureModel->parent(ui->tw_Structure->currentIndex())), Qt::DisplayRole).toInt();
+    sendParam << structureModel->data(structureModel->index(ui->tw_Structure->currentIndex().row(), 1, structureModel->parent(ui->tw_Structure->currentIndex())), Qt::DisplayRole).toString();
+    QString dirParam = structureModel->data(structureModel->index(ui->tw_Structure->currentIndex().row(), 2, structureModel->parent(ui->tw_Structure->currentIndex())), Qt::DisplayRole).toString();
+    if (dirParam == "Въезд") {
+        sendParam << 0;
+    }else {
+        sendParam << 1;
+    }
+    uiStructDetectorDialog *editDetector = new uiStructDetectorDialog(parentIndex, structureModel->getObjectList(), sendParam, this);
+    editDetector->setAttribute(Qt::WA_DeleteOnClose);
+    QObject::connect(editDetector, &uiStructDetectorDialog::sendSqlRequest, this, &MainWindow::sendSqlRequest);
+    editDetector->open();
 }

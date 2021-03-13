@@ -5,10 +5,11 @@
 #include <QBrush>
 #include <QDebug>
 
-StructureTreeModel::StructureTreeModel(QObject *parent) :
-    QAbstractItemModel(parent)
+StructureTreeModel::StructureTreeModel(const QSqlQuery &data, QObject *parent) :
+    QAbstractItemModel(parent), dataQuery(data)
 {
     rootItem = new TreeQueryItem({"ID", "Объект", "Адрес", "Счетчик"});
+    this->setQuery();
 }
 
 StructureTreeModel::~StructureTreeModel()
@@ -16,33 +17,34 @@ StructureTreeModel::~StructureTreeModel()
     delete rootItem;
 }
 
-void StructureTreeModel::setQuery(const QSqlQuery &query)
+void StructureTreeModel::setQuery()
 {
-    QSqlQuery dataQuery = query;
     int objId = -1;
     TreeQueryItem *parentItem = rootItem;
     while (dataQuery.next()) {
-        if (dataQuery.value(4).toInt() > objId) {
+        if (dataQuery.value(7).toInt() > objId) {
             QVector<QVariant> objData;
-            objData.push_back(dataQuery.value(4).toInt());
+            objData.push_back(dataQuery.value(7).toInt());
             objData.push_back(dataQuery.value(5).toString());
             objData.push_back(dataQuery.value(6).toString());
             objData.push_back("");
             TreeQueryItem *objChild = new TreeQueryItem(objData, rootItem);
             objChild->parentItem()->appendChild(objChild);
-            objId = dataQuery.value(4).toInt();
+            objId = dataQuery.value(7).toInt();
 
             parentItem = objChild;
 
-            QVector<QVariant> decData;
-            decData.push_back(dataQuery.value(0).toInt());
-            decData.push_back(dataQuery.value(1).toString());
-            decData.push_back(dataQuery.value(2).toInt());
-            decData.push_back(dataQuery.value(3).toInt());
-            TreeQueryItem *detChild = new TreeQueryItem(decData, parentItem);
-            detChild->parentItem()->appendChild(detChild);
+            if (dataQuery.value(4).toInt() == objId){
+                QVector<QVariant> decData;
+                decData.push_back(dataQuery.value(0).toInt());
+                decData.push_back(dataQuery.value(1).toString());
+                decData.push_back(dataQuery.value(2).toInt());
+                decData.push_back(dataQuery.value(3).toInt());
+                TreeQueryItem *detChild = new TreeQueryItem(decData, parentItem);
+                detChild->parentItem()->appendChild(detChild);
+            }
 
-        } else if (dataQuery.value(4) == objId) {
+        } else if (dataQuery.value(7) == objId) {
             QVector<QVariant> decData;
             decData.push_back(dataQuery.value(0).toInt());
             decData.push_back(dataQuery.value(1).toString());
@@ -64,6 +66,16 @@ bool StructureTreeModel::parentIsRoot(const QModelIndex &index) const
     }else {
         return false;
     }
+}
+
+QVector<std::pair<QString, int> > StructureTreeModel::getObjectList()
+{
+    QVector<std::pair<QString, int>> resultVector;
+    for (int idx = 0; idx < rootItem->childCount(); idx++) {
+        TreeQueryItem *chItem = rootItem->child(idx);
+        resultVector.push_back(std::make_pair(chItem->data(1).toString(), chItem->data(0).toInt()));
+    }
+    return resultVector;
 }
 
 QModelIndex StructureTreeModel::index(int row, int column, const QModelIndex &parent) const

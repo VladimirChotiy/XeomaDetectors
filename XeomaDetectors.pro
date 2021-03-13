@@ -13,6 +13,8 @@ SOURCES += \
     DatabaseManager/StructureTreeModel.cpp \
     DatabaseManager/TreeQueryItem.cpp \
     GUI/uiConnectionDialog/uiConnectionDialog.cpp \
+    GUI/uiStructureDialog/uiStructDetectorDialog.cpp \
+    GUI/uiStructureDialog/uiStructObjectDialog.cpp \
     main.cpp \
     mainwindow.cpp
 
@@ -21,10 +23,14 @@ HEADERS += \
     DatabaseManager/StructureTreeModel.h \
     DatabaseManager/TreeQueryItem.h \
     GUI/uiConnectionDialog/uiConnectionDialog.h \
+    GUI/uiStructureDialog/uiStructDetectorDialog.h \
+    GUI/uiStructureDialog/uiStructObjectDialog.h \
     mainwindow.h
 
 FORMS += \
     GUI/uiConnectionDialog/uiConnectionDialog.ui \
+    GUI/uiStructureDialog/uiStructDetectorDialog.ui \
+    GUI/uiStructureDialog/uiStructObjectDialog.ui \
     mainwindow.ui
 
 # Default rules for deployment.

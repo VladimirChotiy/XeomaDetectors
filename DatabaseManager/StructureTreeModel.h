@@ -15,10 +15,11 @@ class StructureTreeModel : public QAbstractItemModel
     Q_OBJECT
 
 public:
-    explicit StructureTreeModel(QObject *parent = nullptr);
+    explicit StructureTreeModel(const QSqlQuery &data, QObject *parent = nullptr);
     ~StructureTreeModel();
-    void setQuery(const QSqlQuery &query);
+    void setQuery();
     bool parentIsRoot(const QModelIndex &index) const;
+    QVector<std::pair<QString, int>> getObjectList();
 
     QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const override;
     QModelIndex parent(const QModelIndex &child) const override;
@@ -31,6 +32,7 @@ public:
 private:
     void setupModelData(TreeQueryItem *parent);
     TreeQueryItem *rootItem;
+    QSqlQuery dataQuery;
 };
 
 #endif // STRUCTURETREEMODEL_H
