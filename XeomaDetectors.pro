@@ -10,6 +10,7 @@ CONFIG += c++11
 
 SOURCES += \
     DatabaseManager/DatabaseContainer.cpp \
+    DatabaseManager/ProtocolQueryModel.cpp \
     DatabaseManager/StructureTreeModel.cpp \
     DatabaseManager/TreeQueryItem.cpp \
     GUI/uiConnectionDialog/uiConnectionDialog.cpp \
@@ -20,6 +21,7 @@ SOURCES += \
 
 HEADERS += \
     DatabaseManager/DatabaseContainer.h \
+    DatabaseManager/ProtocolQueryModel.h \
     DatabaseManager/StructureTreeModel.h \
     DatabaseManager/TreeQueryItem.h \
     GUI/uiConnectionDialog/uiConnectionDialog.h \

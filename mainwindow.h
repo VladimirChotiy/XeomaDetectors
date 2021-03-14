@@ -3,12 +3,13 @@
 
 #include <QMainWindow>
 #include <QVariantList>
-#include "DatabaseManager/StructureTreeModel.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 class QLabel;
-class QSqlQueryModel;
+class QSqlQuery;
+class ProtocolQueryModel;
+class StructureTreeModel;
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
@@ -27,7 +28,7 @@ private:
     QLabel *sbl_ConnectionStatus;
     QLabel *sbl_StorageStatus;
     StructureTreeModel *structureModel;
-    QSqlQueryModel *protocolModel;
+    ProtocolQueryModel *protocolModel;
 
     // QWidget interface
 protected:

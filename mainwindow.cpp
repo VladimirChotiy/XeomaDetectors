@@ -2,6 +2,8 @@
 #include "ui_mainwindow.h"
 #include "StoreSettings.h"
 #include "DatabaseManager/DatabaseContainer.h"
+#include "DatabaseManager/StructureTreeModel.h"
+#include "DatabaseManager/ProtocolQueryModel.h"
 #include "GUI/uiConnectionDialog/uiConnectionDialog.h"
 #include "GUI/uiStructureDialog/uiStructObjectDialog.h"
 #include "GUI/uiStructureDialog/uiStructDetectorDialog.h"
@@ -12,7 +14,6 @@
 #include <QPixmap>
 #include <QDateTime>
 #include <QSqlQuery>
-#include <QSqlQueryModel>
 #include <QModelIndexList>
 #include <QMessageBox>
 #include <QMenu>
@@ -26,7 +27,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     loadSettings();
     this->advancedGUIInit();
-    protocolModel = new QSqlQueryModel(this);
+    protocolModel = new ProtocolQueryModel(this);
     ui->tbl_ProtocolTable->setModel(protocolModel);
 }
 
@@ -179,24 +180,20 @@ void MainWindow::showTreeViewContextMenu(const QPoint &point)
         QMenu *contextMenu = new QMenu(this);
         QActionGroup *contextGroup = new QActionGroup(this);
         contextMenu->addAction(ui->actionRefresh);
-        //contextMenu->addSeparator();
-        //if (structureModel->parentIsRoot(index)) {
         contextMenu->addSection("Объекты");
         contextGroup->addAction(ui->actionAddObject);
-            contextGroup->addAction(ui->actionEditObject);
-            contextGroup->addAction(ui->actionDeleteObject);
-            contextMenu->addAction(ui->actionAddObject);
-            contextMenu->addAction(ui->actionEditObject);
-            contextMenu->addAction(ui->actionDeleteObject);
-            contextMenu->addSection("Детекторы");
-        //}else {
-            contextGroup->addAction(ui->actionAddDetector);
-            contextGroup->addAction(ui->actionEditDetector);
-            contextGroup->addAction(ui->actionDeleteDetector);
-            contextMenu->addAction(ui->actionAddDetector);
-            contextMenu->addAction(ui->actionEditDetector);
-            contextMenu->addAction(ui->actionDeleteDetector);
-        //}
+        contextGroup->addAction(ui->actionEditObject);
+        contextGroup->addAction(ui->actionDeleteObject);
+        contextMenu->addAction(ui->actionAddObject);
+        contextMenu->addAction(ui->actionEditObject);
+        contextMenu->addAction(ui->actionDeleteObject);
+        contextMenu->addSection("Детекторы");
+        contextGroup->addAction(ui->actionAddDetector);
+        contextGroup->addAction(ui->actionEditDetector);
+        contextGroup->addAction(ui->actionDeleteDetector);
+        contextMenu->addAction(ui->actionAddDetector);
+        contextMenu->addAction(ui->actionEditDetector);
+        contextMenu->addAction(ui->actionDeleteDetector);
         contextMenu->popup(ui->tw_Structure->viewport()->mapToGlobal(point));
     }
 }
