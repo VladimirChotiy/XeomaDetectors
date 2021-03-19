@@ -8,6 +8,7 @@
 #include "GUI/uiStructureDialog/uiStructObjectDialog.h"
 #include "GUI/uiStructureDialog/uiStructDetectorDialog.h"
 #include "GUI/uiPhotoWidget/uiPhotoWidget.h"
+#include "Report/clExcelExport.h"
 #include <QMessageBox>
 #include <QCloseEvent>
 #include <QThread>
@@ -274,6 +275,7 @@ void MainWindow::getSqlRequest(int type, const QSqlQuery *sqlQuery)
             ui->tbl_ProtocolTable->setColumnHidden(6, true);
             ui->tbl_ProtocolTable->setColumnHidden(7, true);
             ui->cb_showPhoto->setEnabled(true);
+            ui->actionConvertToExcel->setEnabled(true);
             break;
         }
 
@@ -300,13 +302,42 @@ void MainWindow::getPicRequest(int type, const QSqlQuery *picQuery)
 
 void MainWindow::on_actionConvertToExcel_triggered()
 {
-    qDebug() << QSqlDatabase::connectionNames();
+    try {
+        clExcelExport exportToExcel;
+        int rows = ui->tbl_ProtocolTable->verticalHeader()->count();
+        int columns = ui->tbl_ProtocolTable->horizontalHeader()->count();
+        int tblColumn = 1;
+
+        for (int col = 0; col < columns; col++) {
+            if (!ui->tbl_ProtocolTable->isColumnHidden(col)) {
+                QString headerName = ui->tbl_ProtocolTable->model()->headerData(col, Qt::Horizontal).toString();
+                exportToExcel.SetCellValue(1, tblColumn, headerName);
+                tblColumn++;
+            }
+        }
+
+        for (int row = 0; row < rows; row++) {
+            tblColumn = 1;
+            for (int col = 0; col < columns; col++) {
+                if (!ui->tbl_ProtocolTable->isColumnHidden(col)) {
+                    QVariant cellData = ui->tbl_ProtocolTable->model()->data(ui->tbl_ProtocolTable->model()->index(row, col));
+                    exportToExcel.SetCellValue(row + 2, tblColumn, cellData);
+                    tblColumn++;
+                }
+            }
+        }
+    }  catch (const std::exception &e) {
+        QMessageBox::critical(this, "Ошибка экспорта в MS Excel", e.what());
+    }
 }
 
 void MainWindow::on_actionRefresh_triggered()
 {
     QStringList sqlFilter;
     QModelIndexList testIndex = ui->tw_Structure->selectionModel()->selectedRows();
+
+    ui->actionConvertToExcel->setEnabled(false);
+
     for (QModelIndex item : testIndex) {
         if (structureModel->parentIsRoot(item)) {
             sqlFilter.append(QString("tbl_detectors.obj_id = %1").arg(item.data().toInt()));

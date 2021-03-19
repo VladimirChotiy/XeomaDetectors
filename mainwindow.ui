@@ -446,6 +446,9 @@
    </property>
   </action>
   <action name="actionConvertToExcel">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="res.qrc">
      <normaloff>:/Icons/icons/excel_files.ico</normaloff>:/Icons/icons/excel_files.ico</iconset>

@@ -1,4 +1,4 @@
-QT       += core gui sql
+QT       += core gui sql axcontainer
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -18,6 +18,7 @@ SOURCES += \
     GUI/uiPhotolabel/uiPhotolabel.cpp \
     GUI/uiStructureDialog/uiStructDetectorDialog.cpp \
     GUI/uiStructureDialog/uiStructObjectDialog.cpp \
+    Report/clExcelExport.cpp \
     main.cpp \
     mainwindow.cpp
 
@@ -31,6 +32,7 @@ HEADERS += \
     GUI/uiPhotolabel/uiPhotolabel.h \
     GUI/uiStructureDialog/uiStructDetectorDialog.h \
     GUI/uiStructureDialog/uiStructObjectDialog.h \
+    Report/clExcelExport.h \
     mainwindow.h
 
 FORMS += \
@@ -50,7 +52,8 @@ win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../StoreSettings/shared/re
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../StoreSettings/shared/debug/ -lStoreSettings
 else:unix:!macx: LIBS += -L$$PWD/../StoreSettings/shared/ -lStoreSettings
 
-INCLUDEPATH += $$PWD/../StoreSettings
+INCLUDEPATH += $$PWD/../StoreSettings \
+                GUI/uiPhotoLabel
 DEPENDPATH += $$PWD/../StoreSettings
 
 RESOURCES += \
