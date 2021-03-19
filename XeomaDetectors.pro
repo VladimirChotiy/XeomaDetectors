@@ -14,6 +14,8 @@ SOURCES += \
     DatabaseManager/StructureTreeModel.cpp \
     DatabaseManager/TreeQueryItem.cpp \
     GUI/uiConnectionDialog/uiConnectionDialog.cpp \
+    GUI/uiPhotoWidget/uiPhotoWidget.cpp \
+    GUI/uiPhotolabel/uiPhotolabel.cpp \
     GUI/uiStructureDialog/uiStructDetectorDialog.cpp \
     GUI/uiStructureDialog/uiStructObjectDialog.cpp \
     main.cpp \
@@ -25,6 +27,8 @@ HEADERS += \
     DatabaseManager/StructureTreeModel.h \
     DatabaseManager/TreeQueryItem.h \
     GUI/uiConnectionDialog/uiConnectionDialog.h \
+    GUI/uiPhotoWidget/uiPhotoWidget.h \
+    GUI/uiPhotolabel/uiPhotolabel.h \
     GUI/uiStructureDialog/uiStructDetectorDialog.h \
     GUI/uiStructureDialog/uiStructObjectDialog.h \
     mainwindow.h

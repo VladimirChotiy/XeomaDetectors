@@ -58,6 +58,7 @@ QVariant ProtocolQueryModel::headerData(int section, Qt::Orientation orientation
     case Qt::TextAlignmentRole: return QVariant(Qt::AlignCenter | (Qt::Alignment)Qt::TextWordWrap);
     case Qt::FontRole: return QFont("MS Shell Dlg 2", 10, QFont::Bold);
     case Qt::SizeHintRole: return QSize(50, 60);
+    //case Qt::InitialSortOrderRole: return QVariant(Qt::AscendingOrder);
     default: return QSqlQueryModel::headerData(section, orientation, role);
     }
 

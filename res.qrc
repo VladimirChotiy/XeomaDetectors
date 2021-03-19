@@ -20,5 +20,6 @@
         <file>icons/storage.ico</file>
         <file>icons/export.ico</file>
         <file>icons/import.ico</file>
+        <file>icons/save.ico</file>
     </qresource>
 </RCC>

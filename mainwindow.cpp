@@ -7,6 +7,7 @@
 #include "GUI/uiConnectionDialog/uiConnectionDialog.h"
 #include "GUI/uiStructureDialog/uiStructObjectDialog.h"
 #include "GUI/uiStructureDialog/uiStructDetectorDialog.h"
+#include "GUI/uiPhotoWidget/uiPhotoWidget.h"
 #include <QMessageBox>
 #include <QCloseEvent>
 #include <QThread>
@@ -14,9 +15,13 @@
 #include <QPixmap>
 #include <QDateTime>
 #include <QSqlQuery>
+#include <QSortFilterProxyModel>
 #include <QModelIndexList>
 #include <QMessageBox>
 #include <QMenu>
+#include <QFile>
+#include <QFileDialog>
+#include <QFileInfo>
 #include <QDebug>
 
 
@@ -25,10 +30,19 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    loadSettings();
-    this->advancedGUIInit();
     protocolModel = new ProtocolQueryModel(this);
-    ui->tbl_ProtocolTable->setModel(protocolModel);
+    proxyModel = new QSortFilterProxyModel(this);
+    proxyModel->setSourceModel(protocolModel);
+    ui->tbl_ProtocolTable->setSortingEnabled(true);
+    ui->tbl_ProtocolTable->horizontalHeader()->setSortIndicatorShown(true);
+    ui->tbl_ProtocolTable->horizontalHeader()->setSectionsMovable(true);
+    ui->tbl_ProtocolTable->setModel(proxyModel);
+    ui->tbl_ProtocolTable->sortByColumn(0, Qt::DescendingOrder);
+    QObject::connect(ui->tbl_ProtocolTable->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &MainWindow::refreshPixmap);
+    QObject::connect(ui->lb_Photo, &uiPhotolabel::clicked, this, &MainWindow::showFullPhoto);
+    QObject::connect(ui->lb_Photo, &uiPhotolabel::customContextMenuRequested, this, &MainWindow::showPhotoContextmenu);
+    this->loadSettings();
+    this->advancedGUIInit();
 }
 
 MainWindow::~MainWindow()
@@ -39,23 +53,36 @@ MainWindow::~MainWindow()
 void MainWindow::loadSettings()
 {
     StoreSettings libStore(this);
-    this->move(libStore.getFormPosition());
-    this->resize(libStore.getFormGeometry());
     if (libStore.paramIsEnabled("Maximized")) {
         this->showMaximized();
+    }else {
+        this->move(libStore.getFormPosition());
+        this->resize(libStore.getFormGeometry());
     }
-    ui->splitter->restoreState(libStore.getByteArray("TestGeometry"));
+    ui->splitter->restoreState(libStore.getByteArray("SpliterGeometry"));
     ui->actionAutoconnect->setChecked(libStore.paramIsEnabled("Autoconnect"));
+
+    protocolTableState = libStore.getByteArray("ProtocolState");
+    structureTreeState = libStore.getByteArray("StructureState");
+
+    ui->cb_showPhoto->setChecked(libStore.paramIsEnabled("ShowPhoto"));
 }
 
 void MainWindow::saveSettings()
 {
     StoreSettings libStore(this);
-    libStore.saveFormPosition(this->pos());
-    libStore.saveFormGeometry(this->size());
-    libStore.setByteArray("TestGeometry", ui->splitter->saveState());
+    libStore.setByteArray("SpliterGeometry", ui->splitter->saveState());
     libStore.setParamEnabled("Autoconnect", ui->actionAutoconnect->isChecked());
     libStore.setParamEnabled("Maximized", this->isMaximized());
+    if (!this->isMaximized()) {
+        libStore.saveFormPosition(this->pos());
+        libStore.saveFormGeometry(this->size());
+    }
+
+    libStore.setByteArray("ProtocolState", ui->tbl_ProtocolTable->horizontalHeader()->saveState());
+    libStore.setByteArray("StructureState", ui->tw_Structure->header()->saveState());
+
+    libStore.setParamEnabled("ShowPhoto", ui->cb_showPhoto->isChecked());
 }
 
 void MainWindow::advancedGUIInit()
@@ -109,12 +136,14 @@ void MainWindow::on_actionConnectToDatabase_triggered()
 
 void MainWindow::on_actionRaportDesigner_triggered()
 {
-    qDebug() << ui->tw_Structure->selectionModel()->currentIndex();
+
 }
 
 void MainWindow::connectToDatabase(QVariantList param)
 {
     emit connectionClosed();
+
+    ui->cb_showPhoto->setEnabled(false);
 
     qRegisterMetaType<DatabaseContainer*>("DatabaseContainer");
 
@@ -141,9 +170,9 @@ void MainWindow::connectToDatabase(QVariantList param)
     QObject::connect(storageConThread, &QThread::finished, storageConThread, &QThread::deleteLater);
     QObject::connect(storageConnection, &DatabaseContainer::databaseResult, sbl_StorageStatus, &QLabel::setEnabled);
     QObject::connect(storageConnection, &DatabaseContainer::statusMessage, this, &MainWindow::showStatusbarMessage);
+    QObject::connect(this, &MainWindow::sendPicRequest, storageConnection, &DatabaseContainer::queryRequest, Qt::QueuedConnection);
+    QObject::connect(storageConnection, &DatabaseContainer::resultQueryReady, this, &MainWindow::getPicRequest, Qt::QueuedConnection);
     storageConThread->start();
-
-
 }
 
 void MainWindow::showStatusbarMessage(const QString &message)
@@ -198,6 +227,34 @@ void MainWindow::showTreeViewContextMenu(const QPoint &point)
     }
 }
 
+void MainWindow::showPhotoContextmenu(const QPoint &point)
+{
+    QMenu *photoContextMenu = new QMenu(this);
+    photoContextMenu->addAction(ui->actionSave);
+    photoContextMenu->popup(ui->lb_Photo->mapToGlobal(point));
+}
+
+void MainWindow::refreshPixmap(const QModelIndex &current, const QModelIndex &previous)
+{
+    Q_UNUSED(previous)
+    if (ui->cb_showPhoto->isChecked()) {
+        int id = protocolModel->data(protocolModel->index(current.row(), 6), Qt::DisplayRole).toInt();
+        int detectorID = protocolModel->data(protocolModel->index(current.row(), 6), Qt::DisplayRole).toInt();
+        QDateTime dt = protocolModel->data(protocolModel->index(current.row(), 3), Qt::DisplayRole).toDateTime();
+        ui->lb_Photo->setText("Загрузка изображения...");
+        QString test = QString::number(detectorID) + "_" + dt.date().toString("yyyyMMdd") + "_" + dt.time().toString("hhmmss") + ".jpg";
+        emit this->sendPicRequest(0, QString("SELECT tbl_pictures.pic_data, (SELECT '%2') AS pic_date FROM tbl_pictures WHERE tbl_pictures.id = %1").arg(id).arg(test));
+    }
+}
+
+void MainWindow::showFullPhoto()
+{
+    uiPhotoWidget *fullPhotoWidget = new uiPhotoWidget(labelPhoto, this);
+    fullPhotoWidget->setWindowTitle(ui->lb_Photo->property("picName").toString());
+    fullPhotoWidget->setAttribute(Qt::WA_DeleteOnClose);
+    fullPhotoWidget->show();
+}
+
 void MainWindow::getSqlRequest(int type, const QSqlQuery *sqlQuery)
 {
     switch (type) {
@@ -207,11 +264,16 @@ void MainWindow::getSqlRequest(int type, const QSqlQuery *sqlQuery)
             }
             structureModel = new StructureTreeModel(*sqlQuery, this);
             ui->tw_Structure->setModel(structureModel);
+            ui->tw_Structure->header()->restoreState(structureTreeState);
             QObject::connect(ui->tw_Structure->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &MainWindow::selectNewTreeItem);
             break;
         }
     case 1: {
             protocolModel->setQuery(*sqlQuery);
+            ui->tbl_ProtocolTable->horizontalHeader()->restoreState(protocolTableState);
+            ui->tbl_ProtocolTable->setColumnHidden(6, true);
+            ui->tbl_ProtocolTable->setColumnHidden(7, true);
+            ui->cb_showPhoto->setEnabled(true);
             break;
         }
 
@@ -219,6 +281,20 @@ void MainWindow::getSqlRequest(int type, const QSqlQuery *sqlQuery)
             this->refreshStructure(true);
         }
     default: break;
+    }
+}
+
+void MainWindow::getPicRequest(int type, const QSqlQuery *picQuery)
+{
+    Q_UNUSED(type)
+    QSqlQuery resultQuery = *picQuery;
+    if (resultQuery.next()) {
+        QPixmap screen;
+        screen.loadFromData(picQuery->value(0).toByteArray());
+        labelPhoto.loadFromData(picQuery->value(0).toByteArray());
+        ui->lb_Photo->setProperty("picName", resultQuery.value(1).toString());
+        ui->lb_Photo->setPixmap(screen.scaled(ui->lb_Photo->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        ui->lb_Photo->setText("");
     }
 }
 
@@ -240,7 +316,7 @@ void MainWindow::on_actionRefresh_triggered()
     }
     if (!sqlFilter.isEmpty()) {
         this->showStatusbarMessage("Запрос к БД... подождите.");
-        emit this->sendSqlRequest(1, "SELECT tbl_protocol.id AS protID, tbl_detectors.name AS detNAME, tbl_detectors.direct, tbl_protocol.event_time, tbl_objects.name AS objNAME, tbl_objects.address FROM tbl_protocol LEFT JOIN tbl_detectors ON tbl_protocol.det_id = tbl_detectors.id LEFT JOIN tbl_objects ON tbl_detectors.obj_id = tbl_objects.id WHERE " + sqlFilter.join(" OR "));
+        emit this->sendSqlRequest(1, "SELECT tbl_protocol.id AS protID, tbl_detectors.name AS detNAME, tbl_detectors.direct, tbl_protocol.event_time, tbl_objects.name AS objNAME, tbl_objects.address, tbl_protocol.pic_id, tbl_detectors.id AS detecID FROM tbl_protocol LEFT JOIN tbl_detectors ON tbl_protocol.det_id = tbl_detectors.id LEFT JOIN tbl_objects ON tbl_detectors.obj_id = tbl_objects.id WHERE " + sqlFilter.join(" OR "));
     }
 }
 
@@ -325,4 +401,38 @@ void MainWindow::on_actionEditDetector_triggered()
     editDetector->setAttribute(Qt::WA_DeleteOnClose);
     QObject::connect(editDetector, &uiStructDetectorDialog::sendSqlRequest, this, &MainWindow::sendSqlRequest);
     editDetector->open();
+}
+
+void MainWindow::on_cb_showPhoto_stateChanged(int arg1)
+{
+    if (arg1 == 0) {
+        ui->lb_Photo->setPixmap(QPixmap());
+        ui->lb_Photo->setText("Изображения отключены");
+    }else {
+        this->refreshPixmap(ui->tbl_ProtocolTable->currentIndex(), QModelIndex());
+    }
+}
+
+void MainWindow::on_actionSave_triggered()
+{
+    StoreSettings libStore(this);
+    QString pathName = libStore.getStringParam("imagePath");
+    QString fileName = QFileDialog::getSaveFileName(this, "Сохранить изображение...", pathName + "/" + ui->lb_Photo->property("picName").toString(), "JPEG images (*.jpg)");
+    if (fileName.isEmpty()) {
+        return;
+    }else {
+        QFile saveFile(fileName);
+        QFileInfo saveFileInfo (saveFile);
+        if (!saveFile.open(QIODevice::WriteOnly)) {
+            QMessageBox::information(this, "Не удается сохранить файл", saveFile.errorString());
+            this->showStatusbarMessage("Ошибка. Не удалось сохранить файл.");
+            return;
+        }
+        if (this->labelPhoto.save(&saveFile)) {
+            this->showStatusbarMessage("Файл" + saveFileInfo.fileName() + " успешно сохранен.");
+            libStore.setStringParam("imagePath", saveFileInfo.path());
+        }else {
+            this->showStatusbarMessage("Ошибка. Не удалось сохранить файл.");
+        }
+    }
 }

@@ -32,7 +32,7 @@
        <enum>Qt::Horizontal</enum>
       </property>
       <widget class="QWidget" name="layoutWidget">
-       <layout class="QVBoxLayout" name="vl_LeftLayout">
+       <layout class="QVBoxLayout" name="vl_LeftLayout" stretch="2,1">
         <item>
          <layout class="QVBoxLayout" name="vl_TreeLayout">
           <item>
@@ -84,6 +84,9 @@
           </item>
           <item>
            <widget class="QCheckBox" name="cb_showPhoto">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>Отображать фотографии</string>
             </property>
@@ -92,9 +95,9 @@
          </layout>
         </item>
         <item>
-         <widget class="QLabel" name="lb_Photo">
+         <widget class="uiPhotolabel" name="lb_Photo">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
             <horstretch>0</horstretch>
             <verstretch>1</verstretch>
            </sizepolicy>
@@ -111,8 +114,11 @@
             <height>0</height>
            </size>
           </property>
+          <property name="contextMenuPolicy">
+           <enum>Qt::CustomContextMenu</enum>
+          </property>
           <property name="text">
-           <string>Image Loading ... 80%</string>
+           <string>Изображения отключены</string>
           </property>
           <property name="scaledContents">
            <bool>true</bool>
@@ -141,6 +147,14 @@
         </item>
         <item>
          <widget class="QTableView" name="tbl_ProtocolTable">
+          <property name="font">
+           <font>
+            <family>MS Shell Dlg 2</family>
+            <pointsize>9</pointsize>
+            <weight>50</weight>
+            <bold>false</bold>
+           </font>
+          </property>
           <property name="styleSheet">
            <string notr="true"/>
           </property>
@@ -481,7 +495,26 @@
     <bool>false</bool>
    </property>
   </action>
+  <action name="actionSave">
+   <property name="icon">
+    <iconset resource="res.qrc">
+     <normaloff>:/Icons/icons/save.ico</normaloff>:/Icons/icons/save.ico</iconset>
+   </property>
+   <property name="text">
+    <string>Сохранить</string>
+   </property>
+   <property name="toolTip">
+    <string>Сохранить изображение</string>
+   </property>
+  </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>uiPhotolabel</class>
+   <extends>QLabel</extends>
+   <header>uiPhotoLabel.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="res.qrc"/>
  </resources>
