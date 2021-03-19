@@ -58,3 +58,14 @@ DEPENDPATH += $$PWD/../StoreSettings
 
 RESOURCES += \
     res.qrc
+
+win32:CONFIG(release, debug|release): {
+    LIBS += -L$$PWD/Report/LimeReport/lib64/release/ -llimereportd
+    INCLUDEPATH += $$PWD/Report/LimeReport/lib64/release/include
+    DEPENDPATH += $$PWD/Report/LimeReport/lib64/release/include
+}
+else:win32:CONFIG(debug, debug|release): {
+    LIBS += -L$$PWD/Report/LimeReport/lib64/debug/ -llimereportd
+    INCLUDEPATH += $$PWD/Report/LimeReport/lib64/debug/include
+    DEPENDPATH += $$PWD/Report/LimeReport/lib64/debug/include
+    }
