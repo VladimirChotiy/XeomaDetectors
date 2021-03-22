@@ -4,7 +4,9 @@
 #include <QMainWindow>
 #include <QVariantList>
 #include <QVector>
+#include <QProgressDialog>
 #include "GUI/uiPhotoLabel/uiPhotolabel.h"
+#include "lrreportengine.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -14,6 +16,7 @@ class QSortFilterProxyModel;
 class ProtocolQueryModel;
 class StructureTreeModel;
 class QPixmap;
+class QSqlQueryModel;
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
@@ -34,9 +37,13 @@ private:
     StructureTreeModel *structureModel = nullptr;
     ProtocolQueryModel *protocolModel;
     QSortFilterProxyModel *proxyModel;
+    QSqlQueryModel *structureRaportModel;
     QByteArray protocolTableState;
     QByteArray structureTreeState;
     QPixmap labelPhoto;
+    QProgressDialog *m_ProgressDialog = nullptr;
+    LimeReport::ReportEngine *m_LimeReport;
+    int m_currentPage;
 
     // QWidget interface
 protected:
@@ -58,6 +65,7 @@ private slots:
     void on_actionEditDetector_triggered();
     void on_cb_showPhoto_stateChanged(int arg1);
     void on_actionSave_triggered();
+    void on_actionSelectAll_triggered();
     void connectToDatabase(QVariantList param);
     void getSqlRequest(int type, const QSqlQuery *sqlQuery);
     void getPicRequest(int type, const QSqlQuery *picQuery);
@@ -68,7 +76,11 @@ private slots:
     void showPhotoContextmenu(const QPoint &point);
     void refreshPixmap(const QModelIndex &current, const QModelIndex &previous);
     void showFullPhoto();
+    void renderStarted();
+    void renderPageFinished(int renderedPageCount);
+    void renderFinished();
     //void savePhoto(QList<QPixmap> photoList);
+
 
 signals:
     void connectionClosed();

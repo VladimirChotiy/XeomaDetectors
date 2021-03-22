@@ -16,6 +16,7 @@
 #include <QPixmap>
 #include <QDateTime>
 #include <QSqlQuery>
+#include <QSqlQueryModel>
 #include <QSortFilterProxyModel>
 #include <QModelIndexList>
 #include <QMessageBox>
@@ -23,6 +24,9 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <LimeReport>
+#include <LRCallbackDS>
+#include <QPrinter>
 #include <QDebug>
 
 
@@ -38,10 +42,21 @@ MainWindow::MainWindow(QWidget *parent)
     ui->tbl_ProtocolTable->horizontalHeader()->setSortIndicatorShown(true);
     ui->tbl_ProtocolTable->horizontalHeader()->setSectionsMovable(true);
     ui->tbl_ProtocolTable->setModel(proxyModel);
-    ui->tbl_ProtocolTable->sortByColumn(0, Qt::DescendingOrder);
+    //ui->tbl_ProtocolTable->sortByColumn(0, Qt::DescendingOrder);
+
     QObject::connect(ui->tbl_ProtocolTable->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &MainWindow::refreshPixmap);
     QObject::connect(ui->lb_Photo, &uiPhotolabel::clicked, this, &MainWindow::showFullPhoto);
     QObject::connect(ui->lb_Photo, &uiPhotolabel::customContextMenuRequested, this, &MainWindow::showPhotoContextmenu);
+
+    structureRaportModel = new QSqlQueryModel(this);
+
+    m_LimeReport = new LimeReport::ReportEngine(this);
+    m_LimeReport->dataManager()->addModel("protocolModel", proxyModel, true);
+    m_LimeReport->dataManager()->addModel("structureModel", structureRaportModel, true);
+//    QObject::connect(m_LimeReport, &LimeReport::ReportEngine::renderStarted, this, &MainWindow::renderStarted);
+//    QObject::connect(m_LimeReport, &LimeReport::ReportEngine::renderPageFinished, this, &MainWindow::renderPageFinished);
+//    QObject::connect(m_LimeReport, &LimeReport::ReportEngine::renderFinished, this, &MainWindow::renderFinished);
+
     this->loadSettings();
     this->advancedGUIInit();
 }
@@ -67,6 +82,12 @@ void MainWindow::loadSettings()
     structureTreeState = libStore.getByteArray("StructureState");
 
     ui->cb_showPhoto->setChecked(libStore.paramIsEnabled("ShowPhoto"));
+
+    ui->tb_MainToolbar->setHidden(libStore.paramIsEnabled(ui->tb_MainToolbar->objectName()));
+    ui->tb_Object->setHidden(libStore.paramIsEnabled(ui->tb_Object->objectName()));
+    ui->tb_Detector->setHidden(libStore.paramIsEnabled(ui->tb_Detector->objectName()));
+    ui->tb_Report->setHidden(libStore.paramIsEnabled(ui->tb_Report->objectName()));
+    ui->tb_Exit->setHidden(libStore.paramIsEnabled(ui->tb_Exit->objectName()));
 }
 
 void MainWindow::saveSettings()
@@ -84,6 +105,12 @@ void MainWindow::saveSettings()
     libStore.setByteArray("StructureState", ui->tw_Structure->header()->saveState());
 
     libStore.setParamEnabled("ShowPhoto", ui->cb_showPhoto->isChecked());
+
+    libStore.setParamEnabled(ui->tb_MainToolbar->objectName(), ui->tb_MainToolbar->isHidden());
+    libStore.setParamEnabled(ui->tb_Object->objectName(), ui->tb_Object->isHidden());
+    libStore.setParamEnabled(ui->tb_Detector->objectName(), ui->tb_Detector->isHidden());
+    libStore.setParamEnabled(ui->tb_Report->objectName(), ui->tb_Report->isHidden());
+    libStore.setParamEnabled(ui->tb_Exit->objectName(), ui->tb_Exit->isHidden());
 }
 
 void MainWindow::advancedGUIInit()
@@ -102,6 +129,16 @@ void MainWindow::advancedGUIInit()
     ui->sb_MainStatusbar->addPermanentWidget(sbl_StorageStatus);
 
     QObject::connect(ui->tw_Structure, &QTreeView::customContextMenuRequested, this, &MainWindow::showTreeViewContextMenu);
+
+    ui->cb_Direction->addItem("Все", "tbl_detectors.direct BETWEEN 0 AND 1");
+    ui->cb_Direction->addItem("Въезд", "tbl_detectors.direct = 0");
+    ui->cb_Direction->addItem("Выезд", "tbl_detectors.direct = 1");
+    ui->cb_Direction->setCurrentText(0);
+
+    ui->dt_Begin->setDate(QDate::fromString("01.01.2021", "dd.MM.yyyy"));
+    ui->dt_Begin->setTime(QTime::fromString("00:00"));
+    ui->dt_End->setDate(QDate::currentDate());
+    ui->dt_End->setTime(QTime::fromString("23:59"));
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -137,7 +174,9 @@ void MainWindow::on_actionConnectToDatabase_triggered()
 
 void MainWindow::on_actionRaportDesigner_triggered()
 {
-
+    m_LimeReport->dataManager()->clearUserVariables();
+    m_LimeReport->setShowProgressDialog(false);
+    m_LimeReport->designReport();
 }
 
 void MainWindow::connectToDatabase(QVariantList param)
@@ -225,6 +264,8 @@ void MainWindow::showTreeViewContextMenu(const QPoint &point)
         contextMenu->addAction(ui->actionEditDetector);
         contextMenu->addAction(ui->actionDeleteDetector);
         contextMenu->popup(ui->tw_Structure->viewport()->mapToGlobal(point));
+        contextMenu->addSection("Выбрать все");
+        contextMenu->addAction(ui->actionSelectAll);
     }
 }
 
@@ -256,6 +297,35 @@ void MainWindow::showFullPhoto()
     fullPhotoWidget->show();
 }
 
+void MainWindow::renderStarted()
+{
+    if (m_LimeReport->isShowProgressDialog()) {
+        m_currentPage = 0;
+        m_ProgressDialog = new QProgressDialog("Создание отчета...", "Отмена", 0, 0, this);
+        QObject::connect(m_ProgressDialog, &QProgressDialog::canceled, m_LimeReport, &LimeReport::ReportEngine::cancelRender);
+        QApplication::processEvents();
+        m_ProgressDialog->show();
+    }
+}
+
+void MainWindow::renderPageFinished(int renderedPageCount)
+{
+    if (m_ProgressDialog) {
+        m_ProgressDialog->setLabelText(QString::number(renderedPageCount) + " страниц готово");
+        m_ProgressDialog->setValue(renderedPageCount);
+    }
+}
+
+void MainWindow::renderFinished()
+{
+    if (m_ProgressDialog) {
+        m_ProgressDialog->close();
+        delete m_ProgressDialog;
+    }
+
+    m_ProgressDialog = nullptr;
+}
+
 void MainWindow::getSqlRequest(int type, const QSqlQuery *sqlQuery)
 {
     switch (type) {
@@ -267,6 +337,7 @@ void MainWindow::getSqlRequest(int type, const QSqlQuery *sqlQuery)
             ui->tw_Structure->setModel(structureModel);
             ui->tw_Structure->header()->restoreState(structureTreeState);
             QObject::connect(ui->tw_Structure->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &MainWindow::selectNewTreeItem);
+            structureRaportModel->setQuery(*sqlQuery);
             break;
         }
     case 1: {
@@ -334,7 +405,10 @@ void MainWindow::on_actionConvertToExcel_triggered()
 void MainWindow::on_actionRefresh_triggered()
 {
     QStringList sqlFilter;
+    QStringList protocolFilter;
     QModelIndexList testIndex = ui->tw_Structure->selectionModel()->selectedRows();
+
+    protocolFilter.append(ui->cb_Direction->currentData(Qt::UserRole).toString());
 
     ui->actionConvertToExcel->setEnabled(false);
 
@@ -345,9 +419,17 @@ void MainWindow::on_actionRefresh_triggered()
             sqlFilter.append(QString("tbl_detectors.id = %1").arg(item.data().toInt()));
         }
     }
+
     if (!sqlFilter.isEmpty()) {
+        protocolFilter << "(" + sqlFilter.join(" OR ") + ")";
+    }
+
+    protocolFilter << ui->cb_Direction->currentData(Qt::UserRole).toString();
+    protocolFilter << "(tbl_protocol.event_time BETWEEN (SELECT '" + ui->dt_Begin->dateTime().toString("yyyy-MM-dd hh:mm:ss") + "') AND (SELECT '" + ui->dt_End->dateTime().toString("yyyy-MM-dd hh:mm:ss") +"'))";
+
+    if (!protocolFilter.isEmpty()) {
         this->showStatusbarMessage("Запрос к БД... подождите.");
-        emit this->sendSqlRequest(1, "SELECT tbl_protocol.id AS protID, tbl_detectors.name AS detNAME, tbl_detectors.direct, tbl_protocol.event_time, tbl_objects.name AS objNAME, tbl_objects.address, tbl_protocol.pic_id, tbl_detectors.id AS detecID FROM tbl_protocol LEFT JOIN tbl_detectors ON tbl_protocol.det_id = tbl_detectors.id LEFT JOIN tbl_objects ON tbl_detectors.obj_id = tbl_objects.id WHERE " + sqlFilter.join(" OR "));
+        emit this->sendSqlRequest(1, "SELECT tbl_protocol.id AS protID, tbl_detectors.name AS detNAME, tbl_detectors.direct, tbl_protocol.event_time, tbl_objects.name AS objNAME, tbl_objects.address, tbl_protocol.pic_id, tbl_detectors.id AS detecID FROM tbl_protocol LEFT JOIN tbl_detectors ON tbl_protocol.det_id = tbl_detectors.id LEFT JOIN tbl_objects ON tbl_detectors.obj_id = tbl_objects.id WHERE " + protocolFilter.join(" AND "));
     }
 }
 
@@ -466,4 +548,9 @@ void MainWindow::on_actionSave_triggered()
             this->showStatusbarMessage("Ошибка. Не удалось сохранить файл.");
         }
     }
+}
+
+void MainWindow::on_actionSelectAll_triggered()
+{
+    ui->tw_Structure->selectAll();
 }

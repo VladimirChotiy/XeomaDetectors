@@ -21,5 +21,6 @@
         <file>icons/export.ico</file>
         <file>icons/import.ico</file>
         <file>icons/save.ico</file>
+        <file>icons/select_all.ico</file>
     </qresource>
 </RCC>
