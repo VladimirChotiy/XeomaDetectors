@@ -174,9 +174,18 @@ void MainWindow::on_actionConnectToDatabase_triggered()
 
 void MainWindow::on_actionRaportDesigner_triggered()
 {
+    int saveSortColumn;
+    Qt::SortOrder saveSortOrder;
+
+    saveSortColumn = proxyModel->sortColumn();
+    saveSortOrder = proxyModel->sortOrder();
+    ui->tbl_ProtocolTable->sortByColumn(4, saveSortOrder);
     m_LimeReport->dataManager()->clearUserVariables();
+    m_LimeReport->dataManager()->setReportVariable("beginDate", ui->dt_Begin->dateTime().toString("dd MMMM yyyyг. hh:mm:ss"));
+    m_LimeReport->dataManager()->setReportVariable("endDate", ui->dt_End->dateTime().toString("dd MMMM yyyyг. hh:mm:ss"));
     m_LimeReport->setShowProgressDialog(false);
     m_LimeReport->designReport();
+    ui->tbl_ProtocolTable->sortByColumn(saveSortColumn, Qt::AscendingOrder);
 }
 
 void MainWindow::connectToDatabase(QVariantList param)
@@ -326,6 +335,39 @@ void MainWindow::renderFinished()
     m_ProgressDialog = nullptr;
 }
 
+QString MainWindow::generateProtocolRequest()
+{
+    QStringList sqlFilter;
+    QStringList protocolFilter;
+    QModelIndexList testIndex = ui->tw_Structure->selectionModel()->selectedRows();
+
+    protocolFilter.append(ui->cb_Direction->currentData(Qt::UserRole).toString());
+
+    ui->actionConvertToExcel->setEnabled(false);
+    ui->actionRaportDesigner->setEnabled(false);
+
+    for (QModelIndex item : testIndex) {
+        if (structureModel->parentIsRoot(item)) {
+            sqlFilter.append(QString("tbl_detectors.obj_id = %1").arg(item.data().toInt()));
+        }else {
+            sqlFilter.append(QString("tbl_detectors.id = %1").arg(item.data().toInt()));
+        }
+    }
+
+    if (!sqlFilter.isEmpty()) {
+        protocolFilter << "(" + sqlFilter.join(" OR ") + ")";
+    }
+
+    protocolFilter << ui->cb_Direction->currentData(Qt::UserRole).toString();
+    protocolFilter << "(tbl_protocol.event_time BETWEEN (SELECT '" + ui->dt_Begin->dateTime().toString("yyyy-MM-dd hh:mm:ss") + "') AND (SELECT '" + ui->dt_End->dateTime().toString("yyyy-MM-dd hh:mm:ss") +"'))";
+
+    if (!protocolFilter.isEmpty()) {
+        this->showStatusbarMessage("Запрос к БД... подождите.");
+        return "SELECT tbl_protocol.id AS protID, tbl_detectors.name AS detNAME, tbl_detectors.direct, tbl_protocol.event_time, tbl_objects.name AS objNAME, tbl_objects.address, tbl_protocol.pic_id, tbl_detectors.id AS detecID FROM tbl_protocol LEFT JOIN tbl_detectors ON tbl_protocol.det_id = tbl_detectors.id LEFT JOIN tbl_objects ON tbl_detectors.obj_id = tbl_objects.id WHERE " + protocolFilter.join(" AND ");
+    }
+    return QString();
+}
+
 void MainWindow::getSqlRequest(int type, const QSqlQuery *sqlQuery)
 {
     switch (type) {
@@ -347,6 +389,7 @@ void MainWindow::getSqlRequest(int type, const QSqlQuery *sqlQuery)
             ui->tbl_ProtocolTable->setColumnHidden(7, true);
             ui->cb_showPhoto->setEnabled(true);
             ui->actionConvertToExcel->setEnabled(true);
+            ui->actionRaportDesigner->setEnabled(true);
             break;
         }
 
@@ -404,32 +447,10 @@ void MainWindow::on_actionConvertToExcel_triggered()
 
 void MainWindow::on_actionRefresh_triggered()
 {
-    QStringList sqlFilter;
-    QStringList protocolFilter;
-    QModelIndexList testIndex = ui->tw_Structure->selectionModel()->selectedRows();
-
-    protocolFilter.append(ui->cb_Direction->currentData(Qt::UserRole).toString());
-
-    ui->actionConvertToExcel->setEnabled(false);
-
-    for (QModelIndex item : testIndex) {
-        if (structureModel->parentIsRoot(item)) {
-            sqlFilter.append(QString("tbl_detectors.obj_id = %1").arg(item.data().toInt()));
-        }else {
-            sqlFilter.append(QString("tbl_detectors.id = %1").arg(item.data().toInt()));
-        }
-    }
-
-    if (!sqlFilter.isEmpty()) {
-        protocolFilter << "(" + sqlFilter.join(" OR ") + ")";
-    }
-
-    protocolFilter << ui->cb_Direction->currentData(Qt::UserRole).toString();
-    protocolFilter << "(tbl_protocol.event_time BETWEEN (SELECT '" + ui->dt_Begin->dateTime().toString("yyyy-MM-dd hh:mm:ss") + "') AND (SELECT '" + ui->dt_End->dateTime().toString("yyyy-MM-dd hh:mm:ss") +"'))";
-
-    if (!protocolFilter.isEmpty()) {
-        this->showStatusbarMessage("Запрос к БД... подождите.");
-        emit this->sendSqlRequest(1, "SELECT tbl_protocol.id AS protID, tbl_detectors.name AS detNAME, tbl_detectors.direct, tbl_protocol.event_time, tbl_objects.name AS objNAME, tbl_objects.address, tbl_protocol.pic_id, tbl_detectors.id AS detecID FROM tbl_protocol LEFT JOIN tbl_detectors ON tbl_protocol.det_id = tbl_detectors.id LEFT JOIN tbl_objects ON tbl_detectors.obj_id = tbl_objects.id WHERE " + protocolFilter.join(" AND "));
+    QString sndRequest;
+    sndRequest = this->generateProtocolRequest();
+    if (!sndRequest.isEmpty()) {
+        emit this->sendSqlRequest(1, sndRequest);
     }
 }
 

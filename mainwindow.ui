@@ -620,6 +620,9 @@
    </property>
   </action>
   <action name="actionRaportDesigner">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="res.qrc">
      <normaloff>:/Icons/icons/rep_designer.ico</normaloff>:/Icons/icons/rep_designer.ico</iconset>

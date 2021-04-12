@@ -79,6 +79,7 @@ private slots:
     void renderStarted();
     void renderPageFinished(int renderedPageCount);
     void renderFinished();
+    QString generateProtocolRequest();
     //void savePhoto(QList<QPixmap> photoList);
 
 
