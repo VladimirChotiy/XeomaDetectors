@@ -8,7 +8,9 @@
 #include "GUI/uiStructureDialog/uiStructObjectDialog.h"
 #include "GUI/uiStructureDialog/uiStructDetectorDialog.h"
 #include "GUI/uiPhotoWidget/uiPhotoWidget.h"
+#include "GUI/uiReportSelector/uiReportSelector.h"
 #include "Report/clExcelExport.h"
+#include "Report/clReportGenerator.h"
 #include <QMessageBox>
 #include <QCloseEvent>
 #include <QThread>
@@ -24,9 +26,6 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
-#include <LimeReport>
-#include <LRCallbackDS>
-#include <QPrinter>
 #include <QDebug>
 
 
@@ -46,16 +45,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     QObject::connect(ui->tbl_ProtocolTable->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &MainWindow::refreshPixmap);
     QObject::connect(ui->lb_Photo, &uiPhotolabel::clicked, this, &MainWindow::showFullPhoto);
-    QObject::connect(ui->lb_Photo, &uiPhotolabel::customContextMenuRequested, this, &MainWindow::showPhotoContextmenu);
 
     structureRaportModel = new QSqlQueryModel(this);
-
-    m_LimeReport = new LimeReport::ReportEngine(this);
-    m_LimeReport->dataManager()->addModel("protocolModel", proxyModel, true);
-    m_LimeReport->dataManager()->addModel("structureModel", structureRaportModel, true);
-//    QObject::connect(m_LimeReport, &LimeReport::ReportEngine::renderStarted, this, &MainWindow::renderStarted);
-//    QObject::connect(m_LimeReport, &LimeReport::ReportEngine::renderPageFinished, this, &MainWindow::renderPageFinished);
-//    QObject::connect(m_LimeReport, &LimeReport::ReportEngine::renderFinished, this, &MainWindow::renderFinished);
 
     this->loadSettings();
     this->advancedGUIInit();
@@ -128,8 +119,6 @@ void MainWindow::advancedGUIInit()
     ui->sb_MainStatusbar->addPermanentWidget(sbl_ConnectionStatus);
     ui->sb_MainStatusbar->addPermanentWidget(sbl_StorageStatus);
 
-    QObject::connect(ui->tw_Structure, &QTreeView::customContextMenuRequested, this, &MainWindow::showTreeViewContextMenu);
-
     ui->cb_Direction->addItem("Все", "tbl_detectors.direct BETWEEN 0 AND 1");
     ui->cb_Direction->addItem("Въезд", "tbl_detectors.direct = 0");
     ui->cb_Direction->addItem("Выезд", "tbl_detectors.direct = 1");
@@ -139,6 +128,8 @@ void MainWindow::advancedGUIInit()
     ui->dt_Begin->setTime(QTime::fromString("00:00"));
     ui->dt_End->setDate(QDate::currentDate());
     ui->dt_End->setTime(QTime::fromString("23:59"));
+
+    ui->tbl_ProtocolTable->addAction(ui->actionSave);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -173,19 +164,9 @@ void MainWindow::on_actionConnectToDatabase_triggered()
 }
 
 void MainWindow::on_actionRaportDesigner_triggered()
-{
-    int saveSortColumn;
-    Qt::SortOrder saveSortOrder;
-
-    saveSortColumn = proxyModel->sortColumn();
-    saveSortOrder = proxyModel->sortOrder();
-    ui->tbl_ProtocolTable->sortByColumn(4, saveSortOrder);
-    m_LimeReport->dataManager()->clearUserVariables();
-    m_LimeReport->dataManager()->setReportVariable("beginDate", ui->dt_Begin->dateTime().toString("dd MMMM yyyyг. hh:mm:ss"));
-    m_LimeReport->dataManager()->setReportVariable("endDate", ui->dt_End->dateTime().toString("dd MMMM yyyyг. hh:mm:ss"));
-    m_LimeReport->setShowProgressDialog(false);
-    m_LimeReport->designReport();
-    ui->tbl_ProtocolTable->sortByColumn(saveSortColumn, Qt::AscendingOrder);
+{ 
+    const QString sndRequest = "SELECT * FROM tbl_templates ORDER BY tbl_templates.id";
+    emit this->sendSqlRequest(3, sndRequest);
 }
 
 void MainWindow::connectToDatabase(QVariantList param)
@@ -196,7 +177,14 @@ void MainWindow::connectToDatabase(QVariantList param)
 
     qRegisterMetaType<DatabaseContainer*>("DatabaseContainer");
 
-    DatabaseContainer *mainConnection = new DatabaseContainer(param.at(0).toString(), param.at(4).toString(), param.at(1).toString(), param.at(2).toString(), param.at(3).toInt());
+    prHostname = param.at(0).toString();
+    prDetDatabase = param.at(4).toString();
+    prPicDatabase = param.at(5).toString();
+    prUsername = param.at(1).toString();
+    prPassword = param.at(2).toString();
+    prPort = param.at(3).toInt();
+
+    DatabaseContainer *mainConnection = new DatabaseContainer(prHostname, prDetDatabase, prUsername, prPassword, prPort);
     QThread *mainConThread = new QThread();
     mainConnection->moveToThread(mainConThread);
     QObject::connect(mainConThread, &QThread::started, mainConnection, &DatabaseContainer::runConnection);
@@ -210,7 +198,7 @@ void MainWindow::connectToDatabase(QVariantList param)
     QObject::connect(mainConnection, &DatabaseContainer::databaseResult, this, &MainWindow::refreshStructure, Qt::QueuedConnection);
     mainConThread->start();
 
-    DatabaseContainer *storageConnection = new DatabaseContainer(param.at(0).toString(), param.at(5).toString(), param.at(1).toString(), param.at(2).toString(), param.at(3).toInt());
+    DatabaseContainer *storageConnection = new DatabaseContainer(prHostname, prPicDatabase, prUsername, prPassword, prPort);
     QThread *storageConThread = new QThread();
     storageConnection->moveToThread(storageConThread);
     QObject::connect(storageConThread, &QThread::started, storageConnection, &DatabaseContainer::runConnection);
@@ -246,43 +234,11 @@ void MainWindow::selectNewTreeItem(const QModelIndex &newIndex, const QModelInde
 void MainWindow::refreshStructure(bool result)
 {
     ui->actionRefresh->setEnabled(result);
+    ui->actionRaportDesigner->setEnabled(result);
+    ui->actionRaport->setEnabled(result);
     if (result){
         emit this->sendSqlRequest(0, "SELECT tbl_detectors.id, tbl_detectors.name, tbl_detectors.direct, tbl_detectors.count, tbl_detectors.obj_id, tbl_objects.name, tbl_objects.address, tbl_objects.id FROM tbl_detectors RIGHT JOIN tbl_objects ON tbl_detectors.obj_id = tbl_objects.id ORDER BY tbl_objects.id, tbl_detectors.id");
     }
-}
-
-void MainWindow::showTreeViewContextMenu(const QPoint &point)
-{
-    QModelIndex index = ui->tw_Structure->indexAt(point);
-    if (index.isValid()) {
-        QMenu *contextMenu = new QMenu(this);
-        QActionGroup *contextGroup = new QActionGroup(this);
-        contextMenu->addAction(ui->actionRefresh);
-        contextMenu->addSection("Объекты");
-        contextGroup->addAction(ui->actionAddObject);
-        contextGroup->addAction(ui->actionEditObject);
-        contextGroup->addAction(ui->actionDeleteObject);
-        contextMenu->addAction(ui->actionAddObject);
-        contextMenu->addAction(ui->actionEditObject);
-        contextMenu->addAction(ui->actionDeleteObject);
-        contextMenu->addSection("Детекторы");
-        contextGroup->addAction(ui->actionAddDetector);
-        contextGroup->addAction(ui->actionEditDetector);
-        contextGroup->addAction(ui->actionDeleteDetector);
-        contextMenu->addAction(ui->actionAddDetector);
-        contextMenu->addAction(ui->actionEditDetector);
-        contextMenu->addAction(ui->actionDeleteDetector);
-        contextMenu->popup(ui->tw_Structure->viewport()->mapToGlobal(point));
-        contextMenu->addSection("Выбрать все");
-        contextMenu->addAction(ui->actionSelectAll);
-    }
-}
-
-void MainWindow::showPhotoContextmenu(const QPoint &point)
-{
-    QMenu *photoContextMenu = new QMenu(this);
-    photoContextMenu->addAction(ui->actionSave);
-    photoContextMenu->popup(ui->lb_Photo->mapToGlobal(point));
 }
 
 void MainWindow::refreshPixmap(const QModelIndex &current, const QModelIndex &previous)
@@ -292,7 +248,7 @@ void MainWindow::refreshPixmap(const QModelIndex &current, const QModelIndex &pr
         int id = protocolModel->data(protocolModel->index(current.row(), 6), Qt::DisplayRole).toInt();
         int detectorID = protocolModel->data(protocolModel->index(current.row(), 6), Qt::DisplayRole).toInt();
         QDateTime dt = protocolModel->data(protocolModel->index(current.row(), 3), Qt::DisplayRole).toDateTime();
-        ui->lb_Photo->setText("Загрузка изображения...");
+        //ui->lb_Photo->setText("Загрузка изображения...");
         QString test = QString::number(detectorID) + "_" + dt.date().toString("yyyyMMdd") + "_" + dt.time().toString("hhmmss") + ".jpg";
         emit this->sendPicRequest(0, QString("SELECT tbl_pictures.pic_data, (SELECT '%2') AS pic_date FROM tbl_pictures WHERE tbl_pictures.id = %1").arg(id).arg(test));
     }
@@ -306,45 +262,12 @@ void MainWindow::showFullPhoto()
     fullPhotoWidget->show();
 }
 
-void MainWindow::renderStarted()
+QString MainWindow::generateRequestFilter(const QString &firstSql)
 {
-    if (m_LimeReport->isShowProgressDialog()) {
-        m_currentPage = 0;
-        m_ProgressDialog = new QProgressDialog("Создание отчета...", "Отмена", 0, 0, this);
-        QObject::connect(m_ProgressDialog, &QProgressDialog::canceled, m_LimeReport, &LimeReport::ReportEngine::cancelRender);
-        QApplication::processEvents();
-        m_ProgressDialog->show();
-    }
-}
-
-void MainWindow::renderPageFinished(int renderedPageCount)
-{
-    if (m_ProgressDialog) {
-        m_ProgressDialog->setLabelText(QString::number(renderedPageCount) + " страниц готово");
-        m_ProgressDialog->setValue(renderedPageCount);
-    }
-}
-
-void MainWindow::renderFinished()
-{
-    if (m_ProgressDialog) {
-        m_ProgressDialog->close();
-        delete m_ProgressDialog;
-    }
-
-    m_ProgressDialog = nullptr;
-}
-
-QString MainWindow::generateProtocolRequest()
-{
+    QString resultRequest;
     QStringList sqlFilter;
     QStringList protocolFilter;
     QModelIndexList testIndex = ui->tw_Structure->selectionModel()->selectedRows();
-
-    protocolFilter.append(ui->cb_Direction->currentData(Qt::UserRole).toString());
-
-    ui->actionConvertToExcel->setEnabled(false);
-    ui->actionRaportDesigner->setEnabled(false);
 
     for (QModelIndex item : testIndex) {
         if (structureModel->parentIsRoot(item)) {
@@ -362,41 +285,93 @@ QString MainWindow::generateProtocolRequest()
     protocolFilter << "(tbl_protocol.event_time BETWEEN (SELECT '" + ui->dt_Begin->dateTime().toString("yyyy-MM-dd hh:mm:ss") + "') AND (SELECT '" + ui->dt_End->dateTime().toString("yyyy-MM-dd hh:mm:ss") +"'))";
 
     if (!protocolFilter.isEmpty()) {
-        this->showStatusbarMessage("Запрос к БД... подождите.");
-        return "SELECT tbl_protocol.id AS protID, tbl_detectors.name AS detNAME, tbl_detectors.direct, tbl_protocol.event_time, tbl_objects.name AS objNAME, tbl_objects.address, tbl_protocol.pic_id, tbl_detectors.id AS detecID FROM tbl_protocol LEFT JOIN tbl_detectors ON tbl_protocol.det_id = tbl_detectors.id LEFT JOIN tbl_objects ON tbl_detectors.obj_id = tbl_objects.id WHERE " + protocolFilter.join(" AND ");
+        resultRequest = firstSql + protocolFilter.join(" AND ");
+        return resultRequest;
     }
     return QString();
 }
 
+QString MainWindow::generateProtocolRequest()
+{
+    const QString mainRequest = "SELECT tbl_protocol.id AS protID, tbl_detectors.name AS detNAME, tbl_detectors.direct, tbl_protocol.event_time, tbl_objects.name AS objNAME, tbl_objects.address, tbl_protocol.pic_id, tbl_detectors.id AS detecID FROM tbl_protocol LEFT JOIN tbl_detectors ON tbl_protocol.det_id = tbl_detectors.id LEFT JOIN tbl_objects ON tbl_detectors.obj_id = tbl_objects.id WHERE ";
+    const QString orderString = " ORDER BY tbl_objects.name, tbl_detectors.direct, tbl_protocol.event_time";
+
+    return this->generateRequestFilter(mainRequest) + orderString;
+}
+
+void MainWindow::prepareReport(int id, const QByteArray &repTemplate, const QString &sqlString, bool filter)
+{
+    QString resultRequest;
+    if (filter) {
+        resultRequest = this->generateRequestFilter(sqlString);
+    }else {
+        resultRequest = sqlString;
+    }
+    m_repGenerator = new clReportGenerator(id, repTemplate, this);
+    //QObject::connect(m_repGenerator, &clReportGenerator::saveTemplate, this, &MainWindow::saveTemplate);
+    emit this->sendSqlRequest(4, resultRequest);
+}
+
+//void MainWindow::saveTemplate(int id, const QByteArray &rpTemplate)
+//{
+//    QString sqlRequest;
+//    sqlRequest = QString("UPDATE tbl_templates SET tbl_templates.template = %2 WHERE tbl_templates.id = %1").arg(id).arg(QString(rpTemplate.toBase64()));
+//    emit this->sendSqlRequest(5, sqlRequest);
+//}
+
 void MainWindow::getSqlRequest(int type, const QSqlQuery *sqlQuery)
 {
     switch (type) {
-    case 0: {
-            if (structureModel != nullptr) {
-                delete structureModel;
+        case 0: {
+                if (structureModel != nullptr) {
+                    delete structureModel;
+                }
+                structureModel = new StructureTreeModel(*sqlQuery, this);
+                ui->tw_Structure->setModel(structureModel);
+                ui->tw_Structure->header()->restoreState(structureTreeState);
+                QObject::connect(ui->tw_Structure->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &MainWindow::selectNewTreeItem);
+                structureRaportModel->setQuery(*sqlQuery);
+                break;
             }
-            structureModel = new StructureTreeModel(*sqlQuery, this);
-            ui->tw_Structure->setModel(structureModel);
-            ui->tw_Structure->header()->restoreState(structureTreeState);
-            QObject::connect(ui->tw_Structure->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &MainWindow::selectNewTreeItem);
-            structureRaportModel->setQuery(*sqlQuery);
-            break;
-        }
-    case 1: {
-            protocolModel->setQuery(*sqlQuery);
-            ui->tbl_ProtocolTable->horizontalHeader()->restoreState(protocolTableState);
-            ui->tbl_ProtocolTable->setColumnHidden(6, true);
-            ui->tbl_ProtocolTable->setColumnHidden(7, true);
-            ui->cb_showPhoto->setEnabled(true);
-            ui->actionConvertToExcel->setEnabled(true);
-            ui->actionRaportDesigner->setEnabled(true);
-            break;
-        }
+        case 1: {
+                protocolModel->setQuery(*sqlQuery);
+                ui->tbl_ProtocolTable->horizontalHeader()->restoreState(protocolTableState);
+                ui->tbl_ProtocolTable->setColumnHidden(6, true);
+                ui->tbl_ProtocolTable->setColumnHidden(7, true);
+                ui->cb_showPhoto->setEnabled(true);
+                ui->actionConvertToExcel->setEnabled(true);
+                ui->actionRaportDesigner->setEnabled(true);
+                ui->actionSave->setEnabled(true);
+                break;
+            }
 
-    case 2: {
-            this->refreshStructure(true);
-        }
-    default: break;
+        case 2: {
+                this->refreshStructure(true);
+                break;
+            }
+
+        case 3: {
+                uiReportSelector *repSelectorDialog = new uiReportSelector(*sqlQuery, this);
+                repSelectorDialog->setAttribute(Qt::WA_DeleteOnClose);
+                QObject::connect(repSelectorDialog, &uiReportSelector::generateRaport, this, &MainWindow::prepareReport);
+                repSelectorDialog->open();
+                break;
+            }
+        case 4: {
+                m_repGenerator->setUserVariables(ui->dt_Begin->dateTime().toString("dd MMMM yyyyг. hh:mm:ss"), ui->dt_End->dateTime().toString("dd MMMM yyyyг. hh:mm:ss"));
+                m_repGenerator->setProtocolQuery(*sqlQuery);
+                this->showStatusbarMessage("Запуск генератора отчетов");
+                m_repGenerator->runReportDesigner();
+                ui->actionRaportDesigner->setEnabled(true);
+                delete m_repGenerator;
+                m_repGenerator = nullptr;
+                break;
+            }
+//        case 5: {
+//                qDebug() << "RRRR";
+//                break;
+//            }
+        default: break;
     }
 }
 
@@ -409,7 +384,7 @@ void MainWindow::getPicRequest(int type, const QSqlQuery *picQuery)
         screen.loadFromData(picQuery->value(0).toByteArray());
         labelPhoto.loadFromData(picQuery->value(0).toByteArray());
         ui->lb_Photo->setProperty("picName", resultQuery.value(1).toString());
-        ui->lb_Photo->setPixmap(screen.scaled(ui->lb_Photo->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        ui->lb_Photo->setPhoto(screen.scaled(ui->lb_Photo->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
         ui->lb_Photo->setText("");
     }
 }
@@ -450,6 +425,10 @@ void MainWindow::on_actionRefresh_triggered()
     QString sndRequest;
     sndRequest = this->generateProtocolRequest();
     if (!sndRequest.isEmpty()) {
+        ui->actionConvertToExcel->setEnabled(false);
+        ui->actionRaportDesigner->setEnabled(false);
+        ui->actionSave->setEnabled(false);
+        this->showStatusbarMessage("Запрос к БД... подождите.");
         emit this->sendSqlRequest(1, sndRequest);
     }
 }
@@ -539,10 +518,8 @@ void MainWindow::on_actionEditDetector_triggered()
 
 void MainWindow::on_cb_showPhoto_stateChanged(int arg1)
 {
-    if (arg1 == 0) {
-        ui->lb_Photo->setPixmap(QPixmap());
-        ui->lb_Photo->setText("Изображения отключены");
-    }else {
+    ui->lb_Photo->viewImage(arg1);
+    if (arg1 != 0) {
         this->refreshPixmap(ui->tbl_ProtocolTable->currentIndex(), QModelIndex());
     }
 }
@@ -574,4 +551,46 @@ void MainWindow::on_actionSave_triggered()
 void MainWindow::on_actionSelectAll_triggered()
 {
     ui->tw_Structure->selectAll();
+}
+
+void MainWindow::on_lb_Photo_customContextMenuRequested(const QPoint &pos)
+{
+    if (ui->lb_Photo->pixmap() == nullptr) return;
+    QMenu *photoContextMenu = new QMenu(this);
+    photoContextMenu->addAction(ui->actionSave);
+    photoContextMenu->popup(ui->lb_Photo->mapToGlobal(pos));
+}
+
+void MainWindow::on_tw_Structure_customContextMenuRequested(const QPoint &pos)
+{
+    QModelIndex index = ui->tw_Structure->indexAt(pos);
+    if (index.isValid()) {
+        QMenu *contextMenu = new QMenu(this);
+        QActionGroup *contextGroup = new QActionGroup(this);
+        contextMenu->addAction(ui->actionRefresh);
+        contextMenu->addSection("Объекты");
+        contextGroup->addAction(ui->actionAddObject);
+        contextGroup->addAction(ui->actionEditObject);
+        contextGroup->addAction(ui->actionDeleteObject);
+        contextMenu->addAction(ui->actionAddObject);
+        contextMenu->addAction(ui->actionEditObject);
+        contextMenu->addAction(ui->actionDeleteObject);
+        contextMenu->addSection("Детекторы");
+        contextGroup->addAction(ui->actionAddDetector);
+        contextGroup->addAction(ui->actionEditDetector);
+        contextGroup->addAction(ui->actionDeleteDetector);
+        contextMenu->addAction(ui->actionAddDetector);
+        contextMenu->addAction(ui->actionEditDetector);
+        contextMenu->addAction(ui->actionDeleteDetector);
+        contextMenu->popup(ui->tw_Structure->viewport()->mapToGlobal(pos));
+        contextMenu->addSection("Выбрать все");
+        contextMenu->addAction(ui->actionSelectAll);
+    }
+}
+
+void MainWindow::on_tbl_ProtocolTable_customContextMenuRequested(const QPoint &pos)
+{
+    QMenu *protocolContextMenu = new QMenu(this);
+    protocolContextMenu->addAction(ui->actionSave);
+    protocolContextMenu->popup(ui->tbl_ProtocolTable->mapToGlobal(pos));
 }

@@ -274,6 +274,9 @@
               <bold>false</bold>
              </font>
             </property>
+            <property name="contextMenuPolicy">
+             <enum>Qt::ActionsContextMenu</enum>
+            </property>
             <property name="styleSheet">
              <string notr="true"/>
             </property>
@@ -356,8 +359,7 @@
     <addaction name="actionRaportDesigner"/>
     <addaction name="actionConvertToExcel"/>
     <addaction name="separator"/>
-    <addaction name="actionRaportStructure"/>
-    <addaction name="actionRaportProtocol"/>
+    <addaction name="actionRaport"/>
    </widget>
    <widget class="QMenu" name="menu_Info">
     <property name="title">
@@ -447,9 +449,7 @@
    </attribute>
    <addaction name="actionRaportDesigner"/>
    <addaction name="actionConvertToExcel"/>
-   <addaction name="separator"/>
-   <addaction name="actionRaportStructure"/>
-   <addaction name="actionRaportProtocol"/>
+   <addaction name="actionRaport"/>
   </widget>
   <widget class="QToolBar" name="tb_Exit">
    <property name="windowTitle">
@@ -649,28 +649,19 @@
     <string>Конвертировать текущий отчет в Excel</string>
    </property>
   </action>
-  <action name="actionRaportStructure">
+  <action name="actionRaport">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="res.qrc">
      <normaloff>:/Icons/icons/rep_common.ico</normaloff>:/Icons/icons/rep_common.ico</iconset>
    </property>
    <property name="text">
-    <string>Отчет по структуре</string>
+    <string>Сформировать отчет</string>
    </property>
    <property name="toolTip">
-    <string>Отчет по структуре объектов и детекторов</string>
-   </property>
-  </action>
-  <action name="actionRaportProtocol">
-   <property name="icon">
-    <iconset resource="res.qrc">
-     <normaloff>:/Icons/icons/rep_common.ico</normaloff>:/Icons/icons/rep_common.ico</iconset>
-   </property>
-   <property name="text">
-    <string>Отчет по проездам</string>
-   </property>
-   <property name="toolTip">
-    <string>Отчет по проездам автотранспорта</string>
+    <string>Запустить генератор отчетов</string>
    </property>
   </action>
   <action name="actionAutoconnect">
@@ -688,6 +679,9 @@
    </property>
   </action>
   <action name="actionSave">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="res.qrc">
      <normaloff>:/Icons/icons/save.ico</normaloff>:/Icons/icons/save.ico</iconset>

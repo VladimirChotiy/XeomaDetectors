@@ -10,6 +10,13 @@ class uiPhotolabel : public QLabel
 public:
     explicit uiPhotolabel(QWidget *parent = Q_NULLPTR, Qt::WindowFlags f = Qt::WindowFlags());
     ~uiPhotolabel();
+    void setPhoto(const QPixmap &photo);
+
+public slots:
+    void viewImage(int mode);
+
+private:
+    bool isViewImage;
 
 signals:
     void clicked();
