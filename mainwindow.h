@@ -80,8 +80,7 @@ private slots:
     void refreshPixmap(const QModelIndex &current, const QModelIndex &previous);
     void showFullPhoto();
     QString generateRequestFilter(const QString &firstSql);
-    QString generateProtocolRequest();
-    void prepareReport(int id, const QByteArray &repTemplate, const QString &sqlString, bool filter = false);
+    void prepareReport(int id, const QByteArray &repTemplate, const QString &sqlString, bool filter = false, bool isDesigner = false);
     //void saveTemplate(int id, const QByteArray &rpTemplate);
     //void savePhoto(QList<QPixmap> photoList);
 
@@ -89,6 +88,8 @@ private slots:
 
 
     void on_tbl_ProtocolTable_customContextMenuRequested(const QPoint &pos);
+
+    void on_actionRaport_triggered();
 
 signals:
     void connectionClosed();

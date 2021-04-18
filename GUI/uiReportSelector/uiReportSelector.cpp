@@ -2,9 +2,10 @@
 #include "ui_uiReportSelector.h"
 #include <QDateTime>
 
-uiReportSelector::uiReportSelector(const QSqlQuery &dataQuery, QWidget *parent) :
+uiReportSelector::uiReportSelector(const QSqlQuery &dataQuery, bool isDesigner, QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::uiReportSelector)
+    ui(new Ui::uiReportSelector),
+    typeIsDesigner(isDesigner)
 {
     ui->setupUi(this);
 
@@ -44,5 +45,5 @@ void uiReportSelector::on_uiReportSelector_accepted()
     sqlString = repModel->data(repModel->index(id, 5)).toString();
     needFilter = repModel->data(repModel->index(id, 6)).toBool();
 
-    emit this->generateRaport(id, reportTemplate, sqlString, needFilter);
+    emit this->generateRaport(id, reportTemplate, sqlString, needFilter, typeIsDesigner);
 }

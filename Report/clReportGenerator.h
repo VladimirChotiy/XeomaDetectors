@@ -35,6 +35,7 @@ private slots:
 
 public slots:
     void runReportDesigner();
+    void runReport();
     void setProtocolQuery(const QSqlQuery &protocolQuery);
     void setUserVariables(const QString beginString, const QString endString);
 

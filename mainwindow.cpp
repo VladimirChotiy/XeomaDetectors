@@ -291,25 +291,23 @@ QString MainWindow::generateRequestFilter(const QString &firstSql)
     return QString();
 }
 
-QString MainWindow::generateProtocolRequest()
+void MainWindow::prepareReport(int id, const QByteArray &repTemplate, const QString &sqlString, bool filter, bool isDesigner)
 {
-    const QString mainRequest = "SELECT tbl_protocol.id AS protID, tbl_detectors.name AS detNAME, tbl_detectors.direct, tbl_protocol.event_time, tbl_objects.name AS objNAME, tbl_objects.address, tbl_protocol.pic_id, tbl_detectors.id AS detecID FROM tbl_protocol LEFT JOIN tbl_detectors ON tbl_protocol.det_id = tbl_detectors.id LEFT JOIN tbl_objects ON tbl_detectors.obj_id = tbl_objects.id WHERE ";
     const QString orderString = " ORDER BY tbl_objects.name, tbl_detectors.direct, tbl_protocol.event_time";
-
-    return this->generateRequestFilter(mainRequest) + orderString;
-}
-
-void MainWindow::prepareReport(int id, const QByteArray &repTemplate, const QString &sqlString, bool filter)
-{
     QString resultRequest;
     if (filter) {
-        resultRequest = this->generateRequestFilter(sqlString);
+        resultRequest = this->generateRequestFilter(sqlString) + orderString;
+        qDebug() << resultRequest;
     }else {
         resultRequest = sqlString;
     }
     m_repGenerator = new clReportGenerator(id, repTemplate, this);
     //QObject::connect(m_repGenerator, &clReportGenerator::saveTemplate, this, &MainWindow::saveTemplate);
-    emit this->sendSqlRequest(4, resultRequest);
+    if (isDesigner){
+        emit this->sendSqlRequest(4, resultRequest);
+    }else {
+        emit this->sendSqlRequest(7, resultRequest);
+    }
 }
 
 //void MainWindow::saveTemplate(int id, const QByteArray &rpTemplate)
@@ -351,7 +349,7 @@ void MainWindow::getSqlRequest(int type, const QSqlQuery *sqlQuery)
             }
 
         case 3: {
-                uiReportSelector *repSelectorDialog = new uiReportSelector(*sqlQuery, this);
+                uiReportSelector *repSelectorDialog = new uiReportSelector(*sqlQuery, true, this);
                 repSelectorDialog->setAttribute(Qt::WA_DeleteOnClose);
                 QObject::connect(repSelectorDialog, &uiReportSelector::generateRaport, this, &MainWindow::prepareReport);
                 repSelectorDialog->open();
@@ -360,7 +358,7 @@ void MainWindow::getSqlRequest(int type, const QSqlQuery *sqlQuery)
         case 4: {
                 m_repGenerator->setUserVariables(ui->dt_Begin->dateTime().toString("dd MMMM yyyyг. hh:mm:ss"), ui->dt_End->dateTime().toString("dd MMMM yyyyг. hh:mm:ss"));
                 m_repGenerator->setProtocolQuery(*sqlQuery);
-                this->showStatusbarMessage("Запуск генератора отчетов");
+                this->showStatusbarMessage("Запуск дизайнера отчетов");
                 m_repGenerator->runReportDesigner();
                 ui->actionRaportDesigner->setEnabled(true);
                 delete m_repGenerator;
@@ -371,6 +369,23 @@ void MainWindow::getSqlRequest(int type, const QSqlQuery *sqlQuery)
 //                qDebug() << "RRRR";
 //                break;
 //            }
+        case 6: {
+                uiReportSelector *repSelectorDialog = new uiReportSelector(*sqlQuery, false, this);
+                repSelectorDialog->setAttribute(Qt::WA_DeleteOnClose);
+                QObject::connect(repSelectorDialog, &uiReportSelector::generateRaport, this, &MainWindow::prepareReport);
+                repSelectorDialog->open();
+                break;
+            }
+        case 7: {
+                m_repGenerator->setUserVariables(ui->dt_Begin->dateTime().toString("dd MMMM yyyyг. hh:mm:ss"), ui->dt_End->dateTime().toString("dd MMMM yyyyг. hh:mm:ss"));
+                m_repGenerator->setProtocolQuery(*sqlQuery);
+                this->showStatusbarMessage("Запуск генератора отчетов");
+                m_repGenerator->runReport();
+                ui->actionRaportDesigner->setEnabled(true);
+                delete m_repGenerator;
+                m_repGenerator = nullptr;
+                break;
+            }
         default: break;
     }
 }
@@ -422,8 +437,9 @@ void MainWindow::on_actionConvertToExcel_triggered()
 
 void MainWindow::on_actionRefresh_triggered()
 {
+    const QString mainRequest = "SELECT tbl_protocol.id AS protID, tbl_detectors.name AS detNAME, tbl_detectors.direct, tbl_protocol.event_time, tbl_objects.name AS objNAME, tbl_objects.address, tbl_protocol.pic_id, tbl_detectors.id AS detecID FROM tbl_protocol LEFT JOIN tbl_detectors ON tbl_protocol.det_id = tbl_detectors.id LEFT JOIN tbl_objects ON tbl_detectors.obj_id = tbl_objects.id WHERE ";
     QString sndRequest;
-    sndRequest = this->generateProtocolRequest();
+    sndRequest = this->generateRequestFilter(mainRequest);
     if (!sndRequest.isEmpty()) {
         ui->actionConvertToExcel->setEnabled(false);
         ui->actionRaportDesigner->setEnabled(false);
@@ -593,4 +609,10 @@ void MainWindow::on_tbl_ProtocolTable_customContextMenuRequested(const QPoint &p
     QMenu *protocolContextMenu = new QMenu(this);
     protocolContextMenu->addAction(ui->actionSave);
     protocolContextMenu->popup(ui->tbl_ProtocolTable->mapToGlobal(pos));
+}
+
+void MainWindow::on_actionRaport_triggered()
+{
+    const QString sndRequest = "SELECT * FROM tbl_templates ORDER BY tbl_templates.id";
+    emit this->sendSqlRequest(6, sndRequest);
 }

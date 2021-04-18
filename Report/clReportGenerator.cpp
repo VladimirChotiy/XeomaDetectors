@@ -128,6 +128,12 @@ void clReportGenerator::runReportDesigner()
     m_LimeReport->designReport();
 }
 
+void clReportGenerator::runReport()
+{
+    m_LimeReport->setShowProgressDialog(true);
+    m_LimeReport->previewReport();
+}
+
 void clReportGenerator::setProtocolQuery(const QSqlQuery &protocolQuery)
 {
     protocolDataQuery = protocolQuery;
