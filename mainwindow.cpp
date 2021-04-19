@@ -305,7 +305,7 @@ QString MainWindow::generatePhotoFilter(const QString &firstSql)
     QModelIndexList testIndex = ui->tbl_ProtocolTable->selectionModel()->selectedRows();
 
     for (QModelIndex item : testIndex) {
-        qDebug() << item;
+        //qDebug() << item;
         sqlFilter.append(QString("tbl_protocol.id = %1").arg(item.data().toInt()));
     }
 
