@@ -21,8 +21,10 @@ clReportGenerator::clReportGenerator(int id, const QByteArray &reportTemplate, Q
     QObject::connect(m_LimeReport, SIGNAL(renderFinished()), this, SLOT(renderFinished()));
     QObject::connect(m_LimeReport, SIGNAL(onLoad(bool&)), this, SLOT(slotLoad(bool&)));
     QObject::connect(m_LimeReport, SIGNAL(onSave(bool&)), this, SLOT(slotSave(bool&)));
-    //QObject::connect(m_LimeReport, SIGNAL(onSaveAs(bool&)), this, SLOT(slotSave(bool&)));
-
+#ifdef QT_DEBUG
+#else
+    QObject::connect(m_LimeReport, SIGNAL(onSaveAs(bool&)), this, SLOT(slotSave(bool&)));
+#endif
     QObject::connect(m_dsProtocol, SIGNAL(getCallbackData(const LimeReport::CallbackInfo&, QVariant&)), this, SLOT(getProtocolCallbackData(const LimeReport::CallbackInfo&, QVariant&)));
     QObject::connect(m_dsProtocol, SIGNAL(changePos(const LimeReport::CallbackInfo::ChangePosType&, bool&)), this, SLOT(protocolChangePos(const LimeReport::CallbackInfo::ChangePosType&, bool&)));
 }

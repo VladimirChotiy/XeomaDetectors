@@ -130,6 +130,13 @@ void MainWindow::advancedGUIInit()
     ui->dt_End->setTime(QTime::fromString("23:59"));
 
     ui->tbl_ProtocolTable->addAction(ui->actionSave);
+    ui->tbl_ProtocolTable->addAction(ui->actionReportPhoto);
+
+#ifdef QT_DEBUG
+    ui->actionRaportDesigner->setVisible(true);
+#else
+    ui->actionRaportDesigner->setVisible(false);
+#endif
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -165,7 +172,7 @@ void MainWindow::on_actionConnectToDatabase_triggered()
 
 void MainWindow::on_actionRaportDesigner_triggered()
 { 
-    const QString sndRequest = "SELECT * FROM tbl_templates ORDER BY tbl_templates.id";
+    const QString sndRequest = "SELECT * FROM tbl_templates WHERE tbl_templates.id != 100 ORDER BY tbl_templates.id";
     emit this->sendSqlRequest(3, sndRequest);
 }
 
@@ -291,13 +298,30 @@ QString MainWindow::generateRequestFilter(const QString &firstSql)
     return QString();
 }
 
+QString MainWindow::generatePhotoFilter(const QString &firstSql)
+{
+    QString resultRequest;
+    QStringList sqlFilter;
+    QModelIndexList testIndex = ui->tbl_ProtocolTable->selectionModel()->selectedRows();
+
+    for (QModelIndex item : testIndex) {
+        qDebug() << item;
+        sqlFilter.append(QString("tbl_protocol.id = %1").arg(item.data().toInt()));
+    }
+
+    if (!sqlFilter.isEmpty()) {
+        resultRequest = "(" + sqlFilter.join(" OR ") + ")";
+    }
+
+    return firstSql + resultRequest;
+}
+
 void MainWindow::prepareReport(int id, const QByteArray &repTemplate, const QString &sqlString, bool filter, bool isDesigner)
 {
     const QString orderString = " ORDER BY tbl_objects.name, tbl_detectors.direct, tbl_protocol.event_time";
     QString resultRequest;
     if (filter) {
         resultRequest = this->generateRequestFilter(sqlString) + orderString;
-        qDebug() << resultRequest;
     }else {
         resultRequest = sqlString;
     }
@@ -307,6 +331,30 @@ void MainWindow::prepareReport(int id, const QByteArray &repTemplate, const QStr
         emit this->sendSqlRequest(4, resultRequest);
     }else {
         emit this->sendSqlRequest(7, resultRequest);
+    }
+}
+
+void MainWindow::preparePhotoReport(const QSqlQuery *sqlTemplate)
+{
+    int tempID;
+    QByteArray reportTemplate;
+    QString sqlString;
+    bool needFilter;
+    bool isDesigner;
+    QSqlQuery dataQuery = *sqlTemplate;
+
+#ifdef QT_DEBUG
+    isDesigner = true;
+#else
+    isDesigner = false;
+#endif
+
+    if (dataQuery.next()) {
+        tempID = dataQuery.value(0).toInt();
+        reportTemplate = dataQuery.value(3).toByteArray();
+        sqlString = this->generatePhotoFilter(dataQuery.value(5).toString());
+        needFilter = dataQuery.value(6).toBool();
+        this->prepareReport(tempID, reportTemplate, sqlString, needFilter, isDesigner);
     }
 }
 
@@ -338,7 +386,7 @@ void MainWindow::getSqlRequest(int type, const QSqlQuery *sqlQuery)
                 ui->tbl_ProtocolTable->setColumnHidden(7, true);
                 ui->cb_showPhoto->setEnabled(true);
                 ui->actionConvertToExcel->setEnabled(true);
-                ui->actionRaportDesigner->setEnabled(true);
+                ui->actionReportPhoto->setEnabled(true);
                 ui->actionSave->setEnabled(true);
                 break;
             }
@@ -360,7 +408,6 @@ void MainWindow::getSqlRequest(int type, const QSqlQuery *sqlQuery)
                 m_repGenerator->setProtocolQuery(*sqlQuery);
                 this->showStatusbarMessage("Запуск дизайнера отчетов");
                 m_repGenerator->runReportDesigner();
-                ui->actionRaportDesigner->setEnabled(true);
                 delete m_repGenerator;
                 m_repGenerator = nullptr;
                 break;
@@ -381,9 +428,24 @@ void MainWindow::getSqlRequest(int type, const QSqlQuery *sqlQuery)
                 m_repGenerator->setProtocolQuery(*sqlQuery);
                 this->showStatusbarMessage("Запуск генератора отчетов");
                 m_repGenerator->runReport();
-                ui->actionRaportDesigner->setEnabled(true);
                 delete m_repGenerator;
                 m_repGenerator = nullptr;
+                break;
+            }
+        case 8: {
+#ifdef QT_DEBUG
+                this->showStatusbarMessage("Запуск дизайнера отчетов");
+                m_repGenerator->runReportDesigner();
+#else
+                this->showStatusbarMessage("Запуск генератора отчетов");
+                m_repGenerator->runReport();
+#endif
+                delete m_repGenerator;
+                m_repGenerator = nullptr;
+                break;
+            }
+        case 9: {
+                this->preparePhotoReport(sqlQuery);
                 break;
             }
         default: break;
@@ -442,7 +504,7 @@ void MainWindow::on_actionRefresh_triggered()
     sndRequest = this->generateRequestFilter(mainRequest);
     if (!sndRequest.isEmpty()) {
         ui->actionConvertToExcel->setEnabled(false);
-        ui->actionRaportDesigner->setEnabled(false);
+        ui->actionReportPhoto->setEnabled(false);
         ui->actionSave->setEnabled(false);
         this->showStatusbarMessage("Запрос к БД... подождите.");
         emit this->sendSqlRequest(1, sndRequest);
@@ -613,6 +675,12 @@ void MainWindow::on_tbl_ProtocolTable_customContextMenuRequested(const QPoint &p
 
 void MainWindow::on_actionRaport_triggered()
 {
-    const QString sndRequest = "SELECT * FROM tbl_templates ORDER BY tbl_templates.id";
+    const QString sndRequest = "SELECT * FROM tbl_templates WHERE tbl_templates.id != 100 ORDER BY tbl_templates.id";
     emit this->sendSqlRequest(6, sndRequest);
+}
+
+void MainWindow::on_actionReportPhoto_triggered()
+{
+    const QString sndRequest = "SELECT * FROM tbl_templates WHERE tbl_templates.id = 100";
+    emit this->sendSqlRequest(9, sndRequest);
 }

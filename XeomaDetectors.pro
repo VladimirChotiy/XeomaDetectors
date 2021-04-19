@@ -66,9 +66,19 @@ RESOURCES += \
     res.qrc
 
 win32:CONFIG(release, debug|release): {
-    LIBS += -L$$PWD/Report/LimeReport/lib64/release/ -llimereportd
+    DESTDIR = $$OUT_PWD/../XeomaDetectorsRelease
+
+    LIBS += -L$$PWD/Report/LimeReport/lib64/release/ -llimereport
     INCLUDEPATH += $$PWD/Report/LimeReport/lib64/release/include
     DEPENDPATH += $$PWD/Report/LimeReport/lib64/release/include
+
+    unix:OBJECTS_DIR = common/build/o/unix
+    win32:OBJECTS_DIR = common/build/o/win32
+    macx:OBJECTS_DIR = common/build/o/mac
+
+    QMAKE_POST_LINK = $$(QTDIR)/bin/windeployqt $$OUT_PWD/../XeomaDetectorsRelease
+    #QMAKE_POST_LINK = $$PWD/release_deploy
+
 }
 else:win32:CONFIG(debug, debug|release): {
     LIBS += -L$$PWD/Report/LimeReport/lib64/debug/ -llimereportd

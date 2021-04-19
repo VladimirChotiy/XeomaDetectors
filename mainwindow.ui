@@ -18,7 +18,7 @@
    </font>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Xeoma Detectors</string>
   </property>
   <property name="windowIcon">
    <iconset resource="res.qrc">
@@ -703,6 +703,21 @@
    </property>
    <property name="toolTip">
     <string>Выбрать все объекты и детекторы</string>
+   </property>
+  </action>
+  <action name="actionReportPhoto">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="res.qrc">
+     <normaloff>:/Icons/icons/rep_common.ico</normaloff>:/Icons/icons/rep_common.ico</iconset>
+   </property>
+   <property name="text">
+    <string>Отчет со скриншотами</string>
+   </property>
+   <property name="toolTip">
+    <string>Отчет со скриншотами по выделенным позициям</string>
    </property>
   </action>
  </widget>
