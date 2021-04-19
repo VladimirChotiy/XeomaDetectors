@@ -1,0 +1,26 @@
+<RCC>
+    <qresource prefix="/Icons">
+        <file>icons/About.ico</file>
+        <file>icons/About_QT.ico</file>
+        <file>icons/Error.ico</file>
+        <file>icons/ok.ico</file>
+        <file>icons/refresh.ico</file>
+        <file>icons/app.ico</file>
+        <file>icons/database.ico</file>
+        <file>icons/close.ico</file>
+        <file>icons/not_answer.ico</file>
+        <file>icons/register.ico</file>
+        <file>icons/add.ico</file>
+        <file>icons/delete.ico</file>
+        <file>icons/edit.ico</file>
+        <file>icons/rep_common.ico</file>
+        <file>icons/rep_designer.ico</file>
+        <file>icons/excel_files.ico</file>
+        <file>icons/server.ico</file>
+        <file>icons/storage.ico</file>
+        <file>icons/export.ico</file>
+        <file>icons/import.ico</file>
+        <file>icons/save.ico</file>
+        <file>icons/select_all.ico</file>
+    </qresource>
+</RCC>
