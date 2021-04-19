@@ -18,6 +18,7 @@ public:
     explicit StructureTreeModel(const QSqlQuery &data, QObject *parent = nullptr);
     ~StructureTreeModel();
     void setQuery();
+    QSqlQuery query() const;
     bool parentIsRoot(const QModelIndex &index) const;
     QVector<std::pair<QString, int>> getObjectList();
 

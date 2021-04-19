@@ -6,6 +6,7 @@
 #include <QDebug>
 #include <QThread>
 #include <QVariant>
+#include <QSqlDriver>
 
 DatabaseContainer::DatabaseContainer(const QString pHostname, const QString pDatabaseName, const QString pUserName, const QString pPassword, int pPort, QObject *parent) :
     QObject(parent), hostname(pHostname), dbName(pDatabaseName), userName(pUserName), password(pPassword), port(pPort)

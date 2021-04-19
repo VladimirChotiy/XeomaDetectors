@@ -73,7 +73,7 @@ QVariant ProtocolQueryModel::getHeaderNames(int column) const
     case 3: return "Время события";
     case 4: return "Название объекта";
     case 5: return "Адрес объекта";
-    default: return "";
+    default: return QSqlQueryModel::headerData(column, Qt::Horizontal, Qt::DisplayRole);
     }
 }
 

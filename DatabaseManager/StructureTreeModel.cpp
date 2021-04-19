@@ -19,6 +19,7 @@ StructureTreeModel::~StructureTreeModel()
 
 void StructureTreeModel::setQuery()
 {
+    this->beginResetModel();
     int objId = -1;
     TreeQueryItem *parentItem = rootItem;
     while (dataQuery.next()) {
@@ -54,6 +55,12 @@ void StructureTreeModel::setQuery()
             detChild->parentItem()->appendChild(detChild);
         }
     }
+    this->endResetModel();
+}
+
+QSqlQuery StructureTreeModel::query() const
+{
+    return dataQuery;
 }
 
 bool StructureTreeModel::parentIsRoot(const QModelIndex &index) const
